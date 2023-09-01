@@ -1,0 +1,385 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.yearlater.inboxmessenger">
+
+    <!-- PERMISSIONS -->
+    <queries>
+        <package android:name="com.google.android.apps.maps" />
+    </queries>
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.READ_CONTACTS" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.READ_PHONE_STATE" />
+    <uses-permission android:name="com.google.android.c2dm.permission.RECEIVE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+    <uses-feature
+        android:name="android.hardware.location.network"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.location.gps"
+        android:required="false" />
+
+    <application
+        android:name="com.yearlater.inboxmessenger.utils.MyApp"
+        android:allowBackup="false"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:requestLegacyExternalStorage="true"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:supportsRtl="false"
+        android:theme="@style/AppTheme"
+        tools:replace="android:supportsRtl,android:allowBackup">
+
+
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
+
+        <!-- ACTIVITIES -->
+
+
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.LockscreenActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait"
+            android:theme="@style/FullscreenTheme" />
+
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.authentication.AuthenticationActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="stateVisible|adjustResize" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.UpdateActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.TextStatusActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.Translucent"
+            android:windowSoftInputMode="stateVisible|adjustResize" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.main.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.ShareGroupLinkActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.SplashActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+        </activity>
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.NewChatActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.main.messaging.ChatActivity"
+            android:exported="true"
+            android:label=""
+            android:parentActivityName="com.yearlater.inboxmessenger.activities.main.MainActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.FullscreenActivity"
+            android:exported="true"
+            android:label=""
+            android:screenOrientation="portrait"
+            android:theme="@style/FullScreenTheme" />
+        <activity
+            android:name="com.theartofdev.edmodo.cropper.CropImageActivity"
+            android:exported="true" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.AgreePrivacyPolicyActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.CameraActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.ProfilePhotoDialog"
+            android:exported="true"
+            android:theme="@style/DialogTheme" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.ForwardActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar">
+
+            <!-- these intent filters to receive data from other apps including images,videos,audio,contacts -->
+
+
+            <!-- receive text -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/plain" />
+            </intent-filter>
+
+            <!-- receive one image -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="image/*" />
+            </intent-filter>
+
+            <!-- receive multiple images -->
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND_MULTIPLE" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="image/*" />
+            </intent-filter>
+
+            <!-- receive one video only -->
+
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="video/*" />
+            </intent-filter>
+
+            <!-- receive one audio -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+
+            <!-- receive contacts -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+
+                <data android:mimeType="text/x-vcard" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.UserDetailsActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.MediaGalleryActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.SelectContactNumbersActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.ContactDetailsActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.settings.SettingsActivity"
+            android:exported="true"
+            android:label="@string/title_activity_settings"
+            android:screenOrientation="portrait"
+            android:theme="@style/SettingsTheme" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.ProfilePhotoActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/FullScreenTheme" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.setup.SetupUserActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.NewGroupActivity"
+            android:exported="true"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.ViewStatusActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/FullscreenTheme"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.MyStatusActivity"
+            android:exported="true"
+            android:label="@string/title_activity_my_status"
+            android:parentActivityName="com.yearlater.inboxmessenger.activities.main.MainActivity"
+            android:theme="@style/AppTheme.NoActionBar">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="com.yearlater.inboxmessenger.activities.main.MainActivity" />
+        </activity>
+
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.calling.CallingActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.NewCallActivity"
+            android:exported="true"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.AcceptInviteLink"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/DialogTheme">
+            <intent-filter
+                android:autoVerify="true"
+                >
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="http"
+                    android:host="www.inbox.ind.in" />
+            </intent-filter>
+            <intent-filter
+                android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="https"
+                    android:host="www.inbox.ind.in" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.yearlater.inboxmessenger.placespicker.PlacesPickerActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
+            android:name="com.yearlater.inboxmessenger.extensions.ExitAndRemoveFromRecentAppsDummyActivity"
+            android:exported="true"
+            android:screenOrientation="portrait"
+            android:theme="@android:style/Theme.NoDisplay" />
+
+        <!-- SERVICES -->
+        <service
+            android:name="com.yearlater.inboxmessenger.job.NetworkJobService"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <service
+            android:name="com.yearlater.inboxmessenger.job.SaveTokenJob"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+        <service
+            android:name="com.yearlater.inboxmessenger.job.SetLastSeenJob"
+            android:permission="android.permission.BIND_JOB_SERVICE" /> <!-- <service -->
+        <service
+            android:name="com.yearlater.inboxmessenger.services.MyFCMService"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <service
+            android:name="com.yearlater.inboxmessenger.services.FCMRegistrationService"
+            android:exported="false" />
+        <service
+            android:name="com.yearlater.inboxmessenger.services.InternetConnectedListener"
+            android:enabled="true"
+            android:exported="false" />
+        <service android:name="com.yearlater.inboxmessenger.services.NetworkService" />
+        <service
+            android:name="com.yearlater.inboxmessenger.services.AudioService"
+            android:enabled="true"
+            android:exported="false" />
+
+        <receiver
+            android:name="com.yearlater.inboxmessenger.receivers.HandleReplyReceiver"
+            android:exported="false" />
+        <receiver
+            android:name="com.yearlater.inboxmessenger.receivers.MarkAsReadReceiver"
+            android:exported="false" />
+
+        <service
+            android:name="com.yearlater.inboxmessenger.services.CallingService"
+            android:exported="false" />
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/provider_paths" />
+        </provider>
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="@string/maps_api_key" />
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="@string/admob_app_id" />
+        <meta-data
+            android:name="com.here.android.maps.appid"
+            android:value="r5oVXgaaSqnhWtqsuMMc" />
+        <meta-data
+            android:name="com.here.android.maps.apptoken"
+            android:value="Pv-_XkZ7CsE9EJn5W1Ahcg" />
+
+        <activity
+            android:name="com.yearlater.inboxmessenger.activities.BackupChatActivity"
+            android:exported="true"
+            android:label="@string/title_activity_backup_chat"
+            android:theme="@style/AppTheme.NoActionBar" />
+    </application>
+
+</manifest>

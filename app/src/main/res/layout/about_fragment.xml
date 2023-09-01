@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:background="@color/colorBg"
+    android:layout_height="match_parent">
+
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+        <androidx.cardview.widget.CardView
+            app:cardBackgroundColor="@color/cardBgColor"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/colorBg"
+                android:orientation="vertical">
+
+
+                <FrameLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="250dp"
+                    android:background="@color/colorBg">
+
+
+                    <ImageView
+                        android:layout_width="match_parent"
+                        android:layout_height="200dp"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/about_cover" />
+
+
+                    <ImageView
+                        android:layout_width="50dp"
+                        android:layout_height="50dp"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="75dp"
+                        android:src="@drawable/ic_inbox_logo" />
+
+
+                </FrameLayout>
+
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingBottom="20dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:text="@string/app_name"
+                        android:textColor="@color/textColor"
+                        android:textSize="20sp" />
+
+                    <TextView
+                        android:id="@+id/tv_app_info"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="18dp"
+                        android:padding="10dp"
+                        android:layout_gravity="center"
+                        android:gravity="center"
+                        android:textColor="@color/textColor"
+
+                        />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center"
+                        android:layout_marginTop="14dp"
+                        android:gravity="center"
+                        android:orientation="horizontal">
+
+                        <ImageButton
+                            android:id="@+id/email_btn"
+                            android:scaleType="fitCenter"
+                            android:layout_width="60dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginRight="18dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:padding="8dp"
+                            app:srcCompat="@drawable/email" />
+
+                        <ImageButton
+                            android:id="@+id/website_btn"
+                            android:scaleType="fitCenter"
+                            android:layout_width="60dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginRight="18dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:padding="8dp"
+                            app:srcCompat="@drawable/web_2" />
+
+                        <ImageButton
+                            android:id="@+id/twitter_btn"
+                            android:scaleType="fitCenter"
+                            android:layout_marginRight="18dp"
+                            android:layout_width="60dp"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:padding="8dp"
+                            app:srcCompat="@drawable/twitter" />
+                        <ImageButton
+                            android:id="@+id/instagram_btn"
+                            android:scaleType="fitCenter"
+                            android:layout_width="60dp"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:padding="8dp"
+                            app:srcCompat="@drawable/insta" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </LinearLayout>
+        </androidx.cardview.widget.CardView>
+
+    </ScrollView>
+
+</RelativeLayout>
+
+
+

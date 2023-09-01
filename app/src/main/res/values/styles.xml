@@ -1,0 +1,231 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="android:windowDisablePreview">true</item>
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorControlNormal">@color/colorPrimary</item>
+        <item name="colorControlActivated">@color/colorAccent</item>
+        <item name="colorControlHighlight">@color/colorAccent</item>
+        <item name="android:itemBackground">#C12424</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="colorBackgroundFloating">
+            @color/colorPrimary</item>
+        <item name="android:colorBackgroundFloating" tools:targetApi="23">
+            @color/colorPrimary</item>
+
+
+
+    </style>
+
+    <style name="AlertDialogCustom">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:background">@color/colorPrimary</item>
+        <item name="android:typeface">normal</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="colorAccent">#FFFFFF</item>
+        <item name="buttonBarNegativeButtonStyle">@style/NegativeButtonStyle</item>
+        <item name="buttonBarPositiveButtonStyle">@style/PositiveButtonStyle</item>
+    </style>
+
+
+    <style name="AlertDialogStyle" parent="Theme.AppCompat.Light.Dialog">
+        <item name="android:background">@color/colorPrimary</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="colorAccent">#FFFFFF</item>
+
+    </style>
+
+    <style name="MyCustom" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimary</item>
+        <item name="toolbar">@style/Toolbar.Zhihu</item>
+        <item name="album.dropdown.title.color">@color/zhihu_album_dropdown_title_text</item>
+        <item name="album.dropdown.count.color">@color/zhihu_album_dropdown_count_text</item>
+        <item name="album.element.color">@android:color/white</item>
+        <item name="album.thumbnail.placeholder">@color/zhihu_album_dropdown_thumbnail_placeholder</item>
+        <item name="album.emptyView">@drawable/ic_empty_zhihu</item>
+        <item name="album.emptyView.textColor">@color/zhihu_album_empty_view</item>
+        <item name="item.placeholder">@color/zhihu_item_placeholder</item>
+        <item name="item.checkCircle.backgroundColor">@color/colorPrimary</item>
+        <item name="item.checkCircle.borderColor">@color/zhihu_item_checkCircle_borderColor</item>
+        <item name="page.bg">@color/zhihu_page_bg</item>
+        <item name="bottomToolbar.bg">@color/zhihu_bottom_toolbar_bg</item>
+        <item name="bottomToolbar.preview.textColor">@color/zhihu_bottom_toolbar_preview</item>
+        <item name="bottomToolbar.apply.textColor">@color/colorPrimary</item>
+        <item name="preview.bottomToolbar.back.textColor">@color/zhihu_preview_bottom_toolbar_back_text</item>
+        <item name="preview.bottomToolbar.apply.textColor">@color/colorPrimary</item>
+        <item name="listPopupWindowStyle">@style/Popup.Zhihu</item>
+        <item name="capture.textColor">@color/zhihu_capture</item>
+    </style>
+    <style name="AppTheme.Launcher">
+        <item name="android:windowBackground">@drawable/launchinbox</item>
+    </style>
+
+    <style name="AppTheme.NoActionBar">
+        <item name="actionModeBackground">@color/actionModeBackground</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="windowActionModeOverlay">true</item> <!-- This is the important line -->
+        <item name="android:itemBackground">@color/colorPrimary</item>
+        <item name="android:textColor">@color/colorText</item>
+        <item name="colorBackgroundFloating">
+            @color/colorPrimary</item>
+        <item name="android:colorBackgroundFloating" tools:targetApi="23">
+            @color/colorPrimary</item>
+    </style>
+
+
+    <style name="SettingsTheme" parent="AppTheme">
+        <item name="alertDialogTheme">@style/AlertDialogTheme</item>
+        <item name="android:textColor">@color/colorText</item>
+        <item name="android:textColorSecondary">@color/colorTextDesc</item>
+
+        <item name="colorBackgroundFloating">
+            @color/colorPrimary</item>
+        <item name="android:colorBackgroundFloating" tools:targetApi="23">
+            @color/colorPrimary</item>
+
+    </style>
+
+
+
+
+    <style name="AlertDialogTheme" parent="ThemeOverlay.AppCompat.Dialog.Alert">
+        <item name="buttonBarNegativeButtonStyle">@style/NegativeButtonStyle</item>
+        <item name="buttonBarPositiveButtonStyle">@style/PositiveButtonStyle</item>
+        <item name="colorAccent">@color/white</item>
+        <item name="colorBackgroundFloating">
+            @color/colorPrimary</item>
+        <item name="android:colorBackgroundFloating" tools:targetApi="23">
+            @color/colorPrimary</item>
+        <item name="android:textColor">@color/colorBlack</item>
+    </style>
+
+    <style name="NegativeButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">@color/colorAccent</item>
+        <item name="colorBackgroundFloating">
+            @color/colorPrimary</item>
+        <item name="android:colorBackgroundFloating" tools:targetApi="23">
+            @color/colorPrimary</item>
+    </style>
+
+    <style name="PositiveButtonStyle" parent="Widget.AppCompat.Button.ButtonBar.AlertDialog">
+        <item name="android:textColor">@color/colorAccent</item>
+        <item name="colorBackgroundFloating">
+            @color/colorPrimary</item>
+        <item name="android:colorBackgroundFloating" tools:targetApi="23">
+            @color/colorPrimary</item>
+    </style>
+
+
+    <style name="DialogTheme" parent="Theme.AppCompat.Light.Dialog">
+        <item name="windowNoTitle">true</item>
+        <item name="colorAccent">@color/white</item>
+        <item name="colorBackgroundFloating">
+            @color/colorPrimary</item>
+        <item name="android:colorBackgroundFloating" tools:targetApi="23">
+            @color/colorPrimary</item>
+    </style>
+
+    <style name="FullScreenTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+
+        <item name="android:windowContentOverlay">@null</item>
+        <item name="android:textColor">#ffffffff</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="colorBackgroundFloating">
+            @color/colorPrimary</item>
+        <item name="android:colorBackgroundFloating" tools:targetApi="23">
+            @color/colorPrimary</item>
+
+    </style>
+
+    <style name="AlertDialog" parent="Base.Theme.AppCompat.Light.Dialog">
+        <item name="android:textColor">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="colorBackgroundFloating">
+            @color/colorPrimary</item>
+        <item name="android:colorBackgroundFloating" tools:targetApi="23">
+            @color/colorPrimary</item>
+
+    </style>
+    <style name="SplashTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="SplashTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+    <style name="AppTheme.NoActionBar.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AppTheme.NoActionBar.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+
+    <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+
+
+    <style name="CollapseToolbar">
+        <item name="android:textColor">#00000000</item>
+        <item name="android:background">@drawable/bg_tv</item>
+    </style>
+    <style name="MyAlertDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
+
+    <item name="android:textColor">@color/white</item>
+    <item name="android:background">@color/colorPrimary</item>
+    <item name="colorAccent">@color/white</item>
+</style>
+
+    <style name="ProfilePhotoToolbarStyle">
+        <item name="actionMenuTextColor">@android:color/white</item>
+        <item name="android:textColorPrimary">@android:color/white</item>
+        <item name="android:textColorSecondary">@android:color/white</item>
+        <!-- No need for colorPrimary, colorPrimaryDark, colorAccent here
+             this should go to the AppTheme -->
+    </style>
+
+    <style name="SentMessageTimeTextStyle" parent="@android:style/TextAppearance.Widget.TextView">
+        <item name="android:textColor">@color/sent_message_time_color</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+
+    <style name="ReceivedMessageTimeTextStyle" parent="@android:style/TextAppearance.Widget.TextView">
+        <item name="android:textColor">@color/textColor</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:textSize">11sp</item>
+    </style>
+
+    <style name="FullscreenTheme" parent="AppTheme">
+        <!--<item name="android:actionBarStyle">@style/FullscreenActionBarStyle</item>-->
+        <!--<item name="android:windowActionBarOverlay">true</item>-->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowBackground">@color/colorBlack</item>
+        <!--<item name="metaButtonBarStyle">?android:attr/buttonBarStyle</item>-->
+        <!--<item name="metaButtonBarButtonStyle">?android:attr/buttonBarButtonStyle</item>-->
+    </style>
+
+    <style name="FullscreenActionBarStyle" parent="Widget.AppCompat.ActionBar">
+        <item name="android:background">@color/black_overlay</item>
+        <item name="colorBackgroundFloating">
+            @color/colorPrimary</item>
+        <item name="android:colorBackgroundFloating" tools:targetApi="23">
+            @color/colorPrimary</item>
+    </style>
+
+    <style name="AppTheme.Translucent" parent="AppTheme.NoActionBar">
+        <item name="android:windowBackground">@color/colorBlack</item>
+        <item name="colorBackgroundFloating">
+            @color/colorPrimary</item>
+        <item name="android:colorBackgroundFloating" tools:targetApi="23">
+            @color/colorPrimary</item>
+    </style>
+
+
+</resources>

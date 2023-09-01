@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="@dimen/margin_top_message"
+    android:layout_marginBottom="@dimen/margin_bottom_message"
+    android:gravity="center"
+    android:orientation="vertical">
+
+
+    <TextView
+        android:id="@+id/tvIncreption"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="10dp"
+        android:background="@drawable/bg_round_shape"
+        android:gravity="center"
+        android:padding="10dp"
+        android:text="🔒 Messages and calls are end-to-end encrypted. No one outside of this chat, even Inbox™, can read or listen to them. Tap to read."
+        android:textColor="@color/header_text_color"
+        android:visibility="visible" />
+</LinearLayout>

@@ -1,0 +1,7 @@
+https://support.google.com/googleplay/android-developer/contact/key
+
+package name  :com.yearlater.inboxmessenger
+Developer name :Yearlater (P) Limited
+Developer account ID   :4625374739390411315
+Is your app enrolled : yes
+Give feedback or describe your issue : Lost password and alias 

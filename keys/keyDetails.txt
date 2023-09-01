@@ -1,0 +1,5 @@
+package name  :com.yearlater.inboxmessenger
+Developer account ID   :4625374739390411315
+inboxproductionkey.jks  :password GUK0Y29MN9iWw
+alias :productionkey  
+alias password :GUK0Y29MN9iWw
