@@ -11,7 +11,7 @@ android {
    */
     defaultConfig {
         applicationId "com.yearlater.inboxmessenger"
-        minSdkVersion 17
+        minSdkVersion 19
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 100
         versionName "5.14"
@@ -61,13 +61,12 @@ android {
 
 
     }
-
-
     buildTypes {
 
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.debug
         }
 
 
@@ -79,7 +78,10 @@ android {
     kotlinOptions {
         jvmTarget = JavaVersion.VERSION_1_8.toString()
     }
-
+    lintOptions {
+        checkReleaseBuilds false
+        abortOnError false
+    }
 
 }
 androidExtensions {
@@ -190,10 +192,14 @@ dependencies {
     // required to avoid crash on Android 12 API 31
     implementation 'androidx.work:work-runtime-ktx:2.7.1'
 
+    implementation 'com.google.android.gms:play-services-auth:17.0.0'
+    implementation 'com.google.android.gms:play-services-auth-api-phone:17.4.0'
 
 /*    // For Kotlin
     implementation 'androidx.work:work-runtime-ktx:2.7.1'*/
 
+    // Import the BoM for the Firebase platform
+    implementation(platform("com.google.firebase:firebase-bom:32.2.3"))
 
 }
 

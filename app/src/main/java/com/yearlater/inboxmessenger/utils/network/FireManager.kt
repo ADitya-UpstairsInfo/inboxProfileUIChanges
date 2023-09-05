@@ -335,7 +335,7 @@ class FireManager {
 
         @JvmStatic
         val phoneNumber: String
-            get() = FirebaseAuth.getInstance().currentUser!!.phoneNumber!!
+            get() = SharedPreferencesManager.getPhoneNumber()
 
         //will check if phone number has one of these strings
         @JvmStatic

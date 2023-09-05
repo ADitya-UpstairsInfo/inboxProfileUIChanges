@@ -10,15 +10,19 @@ import com.yearlater.inboxmessenger.utils.RealmBackupRestore;
 import java.util.concurrent.TimeUnit;
 
 public class DailyBackupJob extends DailyJob {
+    public static void schedule() {
+        //this will schedule a job to backup messages everyday between 2,3 AM
+        DailyJob.schedule(new JobRequest.Builder(
+                        JobIds.JOB_TAG_BACKUP_MESSAGES),
+                TimeUnit.HOURS.toMillis(2),
+                TimeUnit.HOURS.toMillis(3)
+        );
+    }
+
     @NonNull
     @Override
     protected DailyJobResult onRunDailyJob(@NonNull Params params) {
         new RealmBackupRestore(null).backup();
         return DailyJobResult.SUCCESS;
-    }
-
-    public static void schedule() {
-        //this will schedule a job to backup messages everyday between 2,3 AM
-        DailyJob.schedule(new JobRequest.Builder(JobIds.JOB_TAG_BACKUP_MESSAGES), TimeUnit.HOURS.toMillis(2), TimeUnit.HOURS.toMillis(3));
     }
 }

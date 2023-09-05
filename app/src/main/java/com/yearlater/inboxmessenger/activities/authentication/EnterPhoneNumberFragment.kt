@@ -11,7 +11,9 @@ import com.yearlater.inboxmessenger.R
 import com.yearlater.inboxmessenger.utils.MyApp
 import com.yearlater.inboxmessenger.utils.NetworkHelper
 import com.yearlater.inboxmessenger.utils.Util
-import kotlinx.android.synthetic.main.fragment_enter_phone_number.*
+import kotlinx.android.synthetic.main.fragment_enter_phone_number.btn_verify
+import kotlinx.android.synthetic.main.fragment_enter_phone_number.cp
+import kotlinx.android.synthetic.main.fragment_enter_phone_number.et_number
 
 class EnterPhoneNumberFragment : BaseAuthFragment() {
 
@@ -53,7 +55,7 @@ class EnterPhoneNumberFragment : BaseAuthFragment() {
                         if (TextUtils.isEmpty(et_number.text) || TextUtils.isDigitsOnly(et_number.text).not())
                             Util.showSnackbar(requireActivity(), requireActivity().getString(R.string.enter_correct_number))
                         else {
-                            callbacks?.verifyPhoneNumber(number,cp.selectedCountryNameCode)
+                            callbacks?.verifyPhoneNumber(fullNumber.replace('+', ' ').trim(), cp.selectedCountryNameCode)
                         }
 
                     } else {

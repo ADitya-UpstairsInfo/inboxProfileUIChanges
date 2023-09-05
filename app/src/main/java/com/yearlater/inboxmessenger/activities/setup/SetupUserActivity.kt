@@ -17,14 +17,13 @@ import com.bumptech.glide.load.DataSource
 import com.bumptech.glide.load.engine.GlideException
 import com.bumptech.glide.request.RequestListener
 import com.bumptech.glide.request.target.Target
+import com.google.android.material.snackbar.Snackbar
+import com.theartofdev.edmodo.cropper.CropImage
 import com.yearlater.inboxmessenger.BuildConfig
 import com.yearlater.inboxmessenger.R
 import com.yearlater.inboxmessenger.activities.main.MainActivity
 import com.yearlater.inboxmessenger.exceptions.BackupFileMismatchedException
 import com.yearlater.inboxmessenger.exceptions.NoDefaultImageException
-import com.yearlater.inboxmessenger.utils.*
-import com.google.android.material.snackbar.Snackbar
-import com.theartofdev.edmodo.cropper.CropImage
 import com.yearlater.inboxmessenger.utils.*
 import io.realm.exceptions.RealmMigrationNeededException
 import kotlinx.android.synthetic.main.activity_setup_user.*
@@ -52,9 +51,10 @@ class SetupUserActivity : AppCompatActivity() {
             } else {
                 if (throwable != null) {
                     if (throwable is NoDefaultImageException && BuildConfig.DEBUG) {
-                        Toast.makeText(this, "Please upload Default User Image", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(this, "Please upload Default User Image", Toast.LENGTH_SHORT)
+                            .show()
                     } else {
-                        showSnackbar()
+                        showSnackbar("Unable to find the default User Image.")
                     }
                 }
             }
@@ -98,18 +98,29 @@ class SetupUserActivity : AppCompatActivity() {
         //so we can hide the progressBar
 
         Glide.with(this@SetupUserActivity).load(photoUrl)
-                .listener(object : RequestListener<Drawable> {
-                    override fun onResourceReady(resource: Drawable?, model: Any?, target: Target<Drawable>?, dataSource: DataSource?, isFirstResource: Boolean): Boolean {
-                        progress_bar_setup_user_img.visibility = View.GONE
-                        return false
-                    }
+            .listener(object : RequestListener<Drawable> {
+                override fun onResourceReady(
+                    resource: Drawable?,
+                    model: Any?,
+                    target: Target<Drawable>?,
+                    dataSource: DataSource?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    progress_bar_setup_user_img.visibility = View.GONE
+                    return false
+                }
 
-                    override fun onLoadFailed(e: GlideException?, model: Any?, target: Target<Drawable>?, isFirstResource: Boolean): Boolean {
-                        progress_bar_setup_user_img.visibility = View.GONE
-                        return false;
-                    }
+                override fun onLoadFailed(
+                    e: GlideException?,
+                    model: Any?,
+                    target: Target<Drawable>?,
+                    isFirstResource: Boolean
+                ): Boolean {
+                    progress_bar_setup_user_img.visibility = View.GONE
+                    return false;
+                }
 
-                }).into(user_img_setup)
+            }).into(user_img_setup)
     }
 
 
@@ -119,7 +130,7 @@ class SetupUserActivity : AppCompatActivity() {
             et_username_setup.error = getString(R.string.username_is_empty)
         } else {
 
-            progressDialog = ProgressDialog(this@SetupUserActivity,R.style.AlertDialogStyle)
+            progressDialog = ProgressDialog(this@SetupUserActivity, R.style.AlertDialogStyle)
             progressDialog?.setMessage(getString(R.string.loading))
             progressDialog?.setCancelable(false)
             progressDialog?.show()
@@ -145,8 +156,14 @@ class SetupUserActivity : AppCompatActivity() {
     }
 
 
-    private fun showSnackbar() {
-        Snackbar.make(findViewById(android.R.id.content), R.string.no_internet_connection, Snackbar.LENGTH_SHORT).show()
+    private fun showSnackbar(toastMessage: String = "") {
+        val mToastMessage =
+            if (toastMessage.isEmpty()) applicationContext.getString(R.string.no_internet_connection) else toastMessage
+        Snackbar.make(
+            findViewById(android.R.id.content),
+            mToastMessage,
+            Snackbar.LENGTH_SHORT
+        ).show()
     }
 
 

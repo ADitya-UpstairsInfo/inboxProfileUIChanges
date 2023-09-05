@@ -10,7 +10,6 @@ import com.yearlater.inboxmessenger.model.constants.MessageType;
 import com.yearlater.inboxmessenger.model.constants.NetworkType;
 import com.yearlater.inboxmessenger.model.realms.User;
 import com.yearlater.inboxmessenger.utils.network.FireManager;
-import com.yearlater.inboxmessenger.utils.network.FireManager;
 
 import java.util.Arrays;
 import java.util.Date;
@@ -66,15 +65,13 @@ public class SharedPreferencesManager {
 
     }
 
-    public static void setContactSynced(boolean isSynced) {
-        mSharedPref.edit().putBoolean("isSynced", isSynced).apply();
-    }
-
-
     public static boolean isContactSynced() {
         return mSharedPref.getBoolean("isSynced", false);
     }
 
+    public static void setContactSynced(boolean isSynced) {
+        mSharedPref.edit().putBoolean("isSynced", isSynced).apply();
+    }
 
     public static boolean isEnterIsSend() {
         return mSharedPref.getBoolean("enter_is_send", false);
@@ -95,22 +92,19 @@ public class SharedPreferencesManager {
             case NetworkType.WIFI:
                 //check if auto download is enabled on wifi for the given type
                 Set<String> stringSetWifi = mSharedPref.getStringSet(key_autodownload_wifi, defaultWifiSet);
-                if (stringSetWifi.contains(value))
-                    return true;
+                if (stringSetWifi.contains(value)) return true;
 
                 break;
 
             //check if auto download is enabled on DATA for the given type
             case NetworkType.DATA:
                 Set<String> stringSetData = mSharedPref.getStringSet(key_autodownload_cellular, defaultCellularSet);
-                if (stringSetData.contains(value))
-                    return true;
+                if (stringSetData.contains(value)) return true;
                 break;
             //check if auto download is enabled on roaming for the given type
             case NetworkType.ROAMING:
                 Set<String> stringSetRoaming = mSharedPref.getStringSet(key_autodownload_roaming, defaultRoamingSet);
-                if (stringSetRoaming.contains(value))
-                    return true;
+                if (stringSetRoaming.contains(value)) return true;
                 break;
         }
         return false;
@@ -224,16 +218,14 @@ public class SharedPreferencesManager {
         return mSharedPref.getString("ccode", "");
     }
 
+    public static boolean isTokenSaved() {
+        return mSharedPref.getBoolean("token_sent", false);
+    }
 
     // set notification token as saved to prevent resending it to server
     public static void setTokenSaved(boolean bool) {
         mSharedPref.edit().putBoolean("token_sent", bool).commit();
     }
-
-    public static boolean isTokenSaved() {
-        return mSharedPref.getBoolean("token_sent", false);
-    }
-
 
     public static User getCurrentUser() {
         User user = new User();
@@ -255,56 +247,59 @@ public class SharedPreferencesManager {
         return mSharedPref.getBoolean("fetch_user_groups_saved", false);
     }
 
+    public static String getAppSignature() {
+        return mSharedPref.getString("app_signature", "9MS/jdHO72a");
+    }
+
+    public static void setAppSignature(String sig) {
+        mSharedPref.edit().putString("app_signature", sig).apply();
+    }
     public static void setAppVersionSaved(boolean b) {
         mSharedPref.edit().putBoolean("is_app_ver_saved", b).apply();
     }
-
     public static boolean isAppVersionSaved() {
         return mSharedPref.getBoolean("is_app_ver_saved", false);
-    }
-
-    public static void setLastSeenState(int lastSeenState) {
-        mSharedPref.edit().putInt("lastSeenState", lastSeenState).apply();
     }
 
     public static int getLastSeenState() {
         return mSharedPref.getInt("lastSeenState", 0);
     }
 
-
-    public static void setWallpaperPath(String value) {
-        mSharedPref.edit().putString("wallpaperPath", value).apply();
+    public static void setLastSeenState(int lastSeenState) {
+        mSharedPref.edit().putInt("lastSeenState", lastSeenState).apply();
     }
 
     public static String getWallpaperPath() {
         return mSharedPref.getString("wallpaperPath", "");
     }
 
-
-    public static void setLastBackup(long value) {
-        mSharedPref.edit().putLong("lastBackup", value).apply();
+    public static void setWallpaperPath(String value) {
+        mSharedPref.edit().putString("wallpaperPath", value).apply();
     }
 
     public static long getLastBackup() {
         return mSharedPref.getLong("lastBackup", -1);
     }
 
-
-    //used to determine whether the UID,and Phone number were saved
-    public static void setCurrentUserInfoSaved(boolean value) {
-        mSharedPref.edit().putBoolean("currentUserInfoSaved", value).apply();
+    public static void setLastBackup(long value) {
+        mSharedPref.edit().putLong("lastBackup", value).apply();
     }
 
     public static boolean isCurrentUserInfoSaved() {
         return mSharedPref.getBoolean("currentUserInfoSaved", false);
     }
 
-    public static void setDoNotShowBatteryOptimizationAgain(boolean value) {
-        mSharedPref.edit().putBoolean("doNotShowBatteryOptimizationAgain", value).apply();
+    //used to determine whether the UID,and Phone number were saved
+    public static void setCurrentUserInfoSaved(boolean value) {
+        mSharedPref.edit().putBoolean("currentUserInfoSaved", value).apply();
     }
 
     public static boolean isDoNotShowBatteryOptimizationAgain() {
         return mSharedPref.getBoolean("doNotShowBatteryOptimizationAgain", false);
+    }
+
+    public static void setDoNotShowBatteryOptimizationAgain(boolean value) {
+        mSharedPref.edit().putBoolean("doNotShowBatteryOptimizationAgain", value).apply();
     }
 
     public static boolean isDeletedUnfetchedMessage() {
@@ -317,8 +312,7 @@ public class SharedPreferencesManager {
 
 
     public static boolean needsSyncContacts() {
-        if (!mSharedPref.contains("lastSyncContacts"))
-            return true;
+        if (!mSharedPref.contains("lastSyncContacts")) return true;
 
         long lastSyncContacts = mSharedPref.getLong("lastSyncContacts", 0);
 
@@ -339,23 +333,23 @@ public class SharedPreferencesManager {
         return mSharedPref.getBoolean("fingerprint_lock", false);
     }
 
-    public static void setLockAfter(int lockAfter) {
-        mSharedPref.edit().putInt("lock_after", lockAfter).apply();
-    }
-
     public static int getLockAfter() {
         return mSharedPref.getInt("lock_after", 0);
     }
 
-    public static void setLastActive(long currentTimeMillis) {
-        mSharedPref.edit().putLong("last_active", currentTimeMillis).apply();
+    public static void setLockAfter(int lockAfter) {
+        mSharedPref.edit().putInt("lock_after", lockAfter).apply();
     }
 
     public static long getLastActive() {
         return mSharedPref.getLong("last_active", 0);
     }
 
-    public static  boolean clearSharedPref() {
+    public static void setLastActive(long currentTimeMillis) {
+        mSharedPref.edit().putLong("last_active", currentTimeMillis).apply();
+    }
+
+    public static boolean clearSharedPref() {
         mSharedPref.edit().clear().commit();
         return true;
     }

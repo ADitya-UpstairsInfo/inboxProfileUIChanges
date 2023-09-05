@@ -158,8 +158,8 @@ open class BaseHolder(val context: Context, itemView: View) : RecyclerView.ViewH
         val fromId = quotedMessage.fromId
         if (fromId == FireManager.uid) userName = context.resources.getString(R.string.you) else {
             val groupBool = user?.isGroupBool ?: false
-            if (groupBool && user?.group != null && user?.group.users != null) {
-                val user = ListUtil.getUserById(fromId, user?.group.users)
+            if (groupBool && user?.group != null && user?.group!!.users != null) {
+                val user = ListUtil.getUserById(fromId, user?.group!!.users)
                 if (user != null) {
                     userName = user.properUserName
                 }

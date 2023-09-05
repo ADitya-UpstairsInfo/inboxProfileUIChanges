@@ -753,6 +753,8 @@ class CallingService : Service(), ProximitySensor.Delegate, AudioManager.OnAudio
 
 
                 }
+
+                else -> {}
             }
         }
 

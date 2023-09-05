@@ -15,6 +15,8 @@ class AuthenticationViewModel : ViewModel() {
             is StateEvent.NumberEntered -> {
                 _liveData.value = ViewState.Verify(stateEvent.phoneNumber)
             }
+
+            else -> {}
         }
     }
 }

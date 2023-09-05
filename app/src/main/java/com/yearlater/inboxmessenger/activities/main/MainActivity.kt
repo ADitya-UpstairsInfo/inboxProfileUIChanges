@@ -50,7 +50,8 @@ import com.yearlater.inboxmessenger.utils.network.FireManager
 import com.yearlater.inboxmessenger.views.dialogs.IgnoreBatteryDialog
 
 
-class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListener, FragmentCallback, StatusFragmentCallbacks {
+class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListener, FragmentCallback,
+    StatusFragmentCallbacks {
     private var isInSearchMode = false
 
     private lateinit var fab: FloatingActionButton
@@ -75,8 +76,9 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
 
     private var ignoreBatteryDialog: IgnoreBatteryDialog? = null
 
-    private lateinit var  appUpdateManager: AppUpdateManager
+    private lateinit var appUpdateManager: AppUpdateManager
 
+    private var TAG = MainActivity.javaClass.toString()
     override fun enablePresence(): Boolean {
         return true
     }
@@ -88,7 +90,8 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
         Log.d("TAG", "Checking for updates")
         appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
             if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
-                && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)) {
+                && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
+            ) {
                 // Request the update.
                 Log.d("TAG", "Update available")
                 updateDialog()
@@ -100,7 +103,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
     }
 
     private fun updateDialog() {
-        val builder = AlertDialog.Builder(this,R.style.AlertDialogStyle)
+        val builder = AlertDialog.Builder(this, R.style.AlertDialogStyle)
         builder.setTitle("Inbox")
         builder.setMessage(R.string.update_app)
 //builder.setPositiveButton("OK", DialogInterface.OnClickListener(function = x))
@@ -138,7 +141,10 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
         setContentView(R.layout.activity_main)
         init()
 
-        viewModel = ViewModelProvider(this, ViewModelFactory(this.application)).get(MainViewModel::class.java)
+        viewModel = ViewModelProvider(
+            this,
+            ViewModelFactory(this.application)
+        ).get(MainViewModel::class.java)
 
 
         setSupportActionBar(toolbar)
@@ -161,12 +167,24 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
             }
         }
 
-        textStatusFab.setOnClickListener { startActivityForResult(Intent(this, TextStatusActivity::class.java), REQUEST_CODE_TEXT_STATUS) }
+        textStatusFab.setOnClickListener {
+            startActivityForResult(
+                Intent(
+                    this,
+                    TextStatusActivity::class.java
+                ), REQUEST_CODE_TEXT_STATUS
+            )
+        }
 
 
         viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
 
-            override fun onPageScrolled(position: Int, positionOffset: Float, positionOffsetPixels: Int) {}
+            override fun onPageScrolled(
+                position: Int,
+                positionOffset: Float,
+                positionOffsetPixels: Int
+            ) {
+            }
 
             //onSwipe or tab change
             override fun onPageSelected(position: Int) {
@@ -185,7 +203,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
                             addMarginToFab(baseFragment.isVisible && baseFragment.isAdShowing)
                         }
 
-                      /*  animateFab(R.drawable.floatingbutton)*/
+                        /*  animateFab(R.drawable.floatingbutton)*/
                         fab.setImageResource(R.drawable.floatingbutton)
                         textStatusFab.hide()
                     }
@@ -195,20 +213,20 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
                             val baseFragment = fragment as BaseFragment
                             addMarginToFab(baseFragment.isVisible && baseFragment.isAdShowing)
                         }
-/*
-                        animateFab(R.drawable.floatingbutton)*/
+                        /*
+                                                animateFab(R.drawable.floatingbutton)*/
                         fab.setImageResource(R.drawable.floatingbutton)
                         textStatusFab.hide()
                     }
 
                     2 -> {
                         getFragmentByPosition(2)?.let { fragment ->
-                            Log.e("2","2");
-                                val baseFragment = fragment as BaseFragment
-                                addMarginToFab(baseFragment.isVisible && baseFragment.isAdShowing)
+                            Log.e("2", "2")
+                            val baseFragment = fragment as BaseFragment
+                            addMarginToFab(baseFragment.isVisible && baseFragment.isAdShowing)
 
                         }
-                 /*       animateFab(R.drawable.inboxcamera)*/
+                        /*       animateFab(R.drawable.inboxcamera)*/
                         fab.setImageResource(R.drawable.inboxcamera)
                         animateTextStatusFab()
 
@@ -255,7 +273,9 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
         })
         //save app ver if it's not saved before
         if (!SharedPreferencesManager.isAppVersionSaved()) {
-            FireConstants.usersRef.child(FireManager.uid).child("ver").setValue(AppVerUtil.getAppVersion(this)).addOnSuccessListener { SharedPreferencesManager.setAppVersionSaved(true) }
+            FireConstants.usersRef.child(FireManager.uid).child("ver")
+                .setValue(AppVerUtil.getAppVersion(this))
+                .addOnSuccessListener { SharedPreferencesManager.setAppVersionSaved(true) }
         }
 
 
@@ -278,16 +298,17 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
         }
 
         viewModel.deleteOldMessagesIfNeeded()
-       /* viewModel.checkForUpdate().subscribe({ needsUpdate ->
-            if (needsUpdate) {
-                startUpdateActivity()
-            } else {
-                EventBus.getDefault().post(ExitUpdateActivityEvent())
-            }
-        }, {
+        /* viewModel.checkForUpdate().subscribe({ needsUpdate ->
+             if (needsUpdate) {
+                 startUpdateActivity()
+             } else {
+                 EventBus.getDefault().post(ExitUpdateActivityEvent())
+             }
+         }, {
 
-        })*/
+         })*/
 
+        Log.i(TAG, "onCreate: Created User Id ${FireManager.uid} ")
 
     }
 
@@ -314,7 +335,8 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
     private fun showBatteryOptimizationDialog() {
 
         ignoreBatteryDialog = IgnoreBatteryDialog(this)
-        ignoreBatteryDialog?.setOnDialogClickListener(object : IgnoreBatteryDialog.OnDialogClickListener {
+        ignoreBatteryDialog?.setOnDialogClickListener(object :
+            IgnoreBatteryDialog.OnDialogClickListener {
 
             override fun onCancelClick(checkBoxChecked: Boolean) {
                 SharedPreferencesManager.setDoNotShowBatteryOptimizationAgain(checkBoxChecked)
@@ -326,7 +348,11 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
                     intent.action = Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS
                     startActivity(intent)
                 } catch (e: Exception) {
-                    Toast.makeText(this@MainActivity, "could not open Battery Optimization Settings", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@MainActivity,
+                        "could not open Battery Optimization Settings",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
 
             }
@@ -420,7 +446,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
         tabLayout = findViewById(R.id.tab_layout)
         textStatusFab = findViewById(R.id.text_status_fab)
         root = findViewById(R.id.root)
-        appUpdateManager =  AppUpdateManagerFactory.create(this)
+        appUpdateManager = AppUpdateManagerFactory.create(this)
         initTabLayout()
         checkUpdate()
         //prefix for a bug in older APIs
@@ -429,7 +455,10 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
 
     private fun initTabLayout() {
         tabLayout.setupWithViewPager(viewPager)
-        adapter = ViewPagerAdapter(supportFragmentManager, FragmentStatePagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT)
+        adapter = ViewPagerAdapter(
+            supportFragmentManager,
+            FragmentStatePagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT
+        )
         viewPager.adapter = adapter
         viewPager.offscreenPageLimit = 1
         setTabsTitles(4)
@@ -446,9 +475,9 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
         val menuItem = menu.findItem(R.id.search_item)
-        menu.findItem(R.id.new_broadcast_item).setTitle(Html.fromHtml("<font color='#FFFFFF'>New broadcast</font>"));
-        menu.findItem(R.id.invite_item).setTitle(Html.fromHtml("<font color='#FFFFFF'>Invite</font>"));
-        menu.findItem(R.id.settings_item).setTitle(Html.fromHtml("<font color='#FFFFFF'>Settings</font>"));
+        menu.findItem(R.id.new_broadcast_item).title = Html.fromHtml("<font color='#FFFFFF'>New broadcast</font>")
+        menu.findItem(R.id.invite_item).title = Html.fromHtml("<font color='#FFFFFF'>Invite</font>")
+        menu.findItem(R.id.settings_item).title = Html.fromHtml("<font color='#FFFFFF'>Settings</font>")
 
         searchView = menuItem.actionView as SearchView
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
@@ -577,7 +606,10 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
 
     override fun addMarginToFab(isAdShowing: Boolean) {
         val layoutParams = fab.layoutParams as CoordinatorLayout.LayoutParams
-        val v = if (isAdShowing) DpUtil.toPixel(95f, this) else resources.getDimensionPixelSize(R.dimen.fab_margin).toFloat()
+        val v = if (isAdShowing) DpUtil.toPixel(
+            95f,
+            this
+        ) else resources.getDimensionPixelSize(R.dimen.fab_margin).toFloat()
 
 
         layoutParams.bottomMargin = v.toInt()
@@ -601,7 +633,12 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
     }
 
     private fun getFragmentByPosition(position: Int): Fragment? {
-        return viewPager.currentItem.let { supportFragmentManager.findFragmentByTagForViewPager(position, it) }
+        return viewPager.currentItem.let {
+            supportFragmentManager.findFragmentByTagForViewPager(
+                position,
+                it
+            )
+        }
     }
 
 
