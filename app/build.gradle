@@ -201,6 +201,7 @@ dependencies {
     // Import the BoM for the Firebase platform
     implementation(platform("com.google.firebase:firebase-bom:32.2.3"))
 
+    implementation 'io.github.otpless-tech:otpless-android-sdk:2.1.6'
 }
 
 

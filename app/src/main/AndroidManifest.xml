@@ -77,9 +77,25 @@
         <activity
             android:name="com.yearlater.inboxmessenger.activities.authentication.AuthenticationActivity"
             android:exported="true"
+            android:launchMode="singleTop"
             android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar"
-            android:windowSoftInputMode="stateVisible|adjustResize" />
+
+            android:windowSoftInputMode="stateVisible|adjustResize">
+
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:host="otpless"
+                    android:scheme="${applicationId}.otpless" />
+            </intent-filter>
+
+        </activity>
+
         <activity
             android:name="com.yearlater.inboxmessenger.activities.UpdateActivity"
             android:exported="true"
