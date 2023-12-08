@@ -14,6 +14,7 @@ import com.yearlater.inboxmessenger.utils.Util
 import kotlinx.android.synthetic.main.fragment_enter_phone_number.btn_verify
 import kotlinx.android.synthetic.main.fragment_enter_phone_number.cp
 import kotlinx.android.synthetic.main.fragment_enter_phone_number.et_number
+import kotlinx.android.synthetic.main.fragment_enter_phone_number.otpless_whatsapp_view
 
 class EnterPhoneNumberFragment : BaseAuthFragment() {
 
@@ -32,17 +33,12 @@ class EnterPhoneNumberFragment : BaseAuthFragment() {
         cp.setDefaultCountryUsingNameCode("US")
         cp.detectSIMCountry(true)
 
-
-
-
         btn_verify.setOnClickListener {
             val number = et_number.text.toString().trim()
             val fullNumber = cp.selectedCountryCodeWithPlus + number
 
-
             //dismiss keyboard
             et_number.onEditorAction(EditorInfo.IME_ACTION_DONE)
-
 
             AlertDialog.Builder(requireActivity(),R.style.AlertDialogStyle).apply {
                 val message = requireActivity().getString(R.string.enter_phone_confirmation_message, fullNumber)
@@ -66,7 +62,6 @@ class EnterPhoneNumberFragment : BaseAuthFragment() {
                 show()
             }
         }
-
     }
 
     override fun enableViews() {

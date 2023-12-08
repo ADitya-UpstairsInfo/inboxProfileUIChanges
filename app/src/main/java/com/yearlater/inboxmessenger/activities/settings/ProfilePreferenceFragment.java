@@ -64,7 +64,6 @@ public class ProfilePreferenceFragment extends PreferenceFragmentCompat implemen
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setHasOptionsMenu(true);
-
     }
 
     @Override
@@ -96,7 +95,6 @@ public class ProfilePreferenceFragment extends PreferenceFragmentCompat implemen
         imageButtonEditUsername = view.findViewById(R.id.image_button_edit_username);
         tvStatus = view.findViewById(R.id.tv_status);
         tvPhoneNumber = view.findViewById(R.id.tv_phone_number);
-
 
         String userName = SharedPreferencesManager.getUserName();
         String status = SharedPreferencesManager.getStatus();

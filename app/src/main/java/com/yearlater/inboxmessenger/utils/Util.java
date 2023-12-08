@@ -85,14 +85,19 @@ public class Util {
     public static String getVideoLength(Context context, String path) {
         if (path == null) return "";
 
-        long mediaLengthInMillis = getMediaLengthInMillis(context, path);
+        long mediaLengthInMillis = 0;
+        try {
+            mediaLengthInMillis = getMediaLengthInMillis(context, path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         return Util.milliSecondsToTimer(mediaLengthInMillis);
 
 
     }
 
     //get audio length using its file
-    public static long getMediaLengthInMillis(Context context, String path) {
+    public static long getMediaLengthInMillis(Context context, String path) throws IOException {
         MediaMetadataRetriever retriever = new MediaMetadataRetriever();
 
         try {
@@ -105,11 +110,7 @@ public class Util {
             e.printStackTrace();
             return 0;
         } finally {
-            try {
-                retriever.release();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            retriever.release();
         }
 
 

@@ -168,6 +168,7 @@ import org.greenrobot.eventbus.ThreadMode;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -3389,7 +3390,12 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         String messageId = message.getMessageId();
 
         if (seekBarMax == 100) {
-            int max = (int) Util.getMediaLengthInMillis(this, message.getLocalPath());
+            int max = 0;
+            try {
+                max = (int) Util.getMediaLengthInMillis(this, message.getLocalPath());
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             if (max == 0) return; //if file not found or missing permissions
 
             int realProgress = max / 100 * progress;

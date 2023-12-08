@@ -48,6 +48,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.zhihu.matisse.Matisse;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -269,7 +270,12 @@ public class MyStatusActivity extends BaseActivity implements ActionMode.Callbac
                 //Check if it's a video
                 if (FileUtils.isPickedVideo(mPaths.get(0))) {
                     //check if video is longer than 30sec
-                    long mediaLengthInMillis = Util.getMediaLengthInMillis(this, mPaths.get(0));
+                    long mediaLengthInMillis = 0;
+                    try {
+                        mediaLengthInMillis = Util.getMediaLengthInMillis(this, mPaths.get(0));
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                     long seconds = TimeUnit.MILLISECONDS.toSeconds(mediaLengthInMillis);
                     if (seconds <= MAX_STATUS_VIDEO_TIME) {
                         for (String mPath : mPaths) {

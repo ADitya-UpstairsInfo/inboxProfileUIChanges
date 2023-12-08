@@ -6,6 +6,7 @@ import com.yearlater.inboxmessenger.model.realms.Status;
 import com.yearlater.inboxmessenger.utils.network.FireManager;
 import com.yearlater.inboxmessenger.utils.network.FireManager;
 
+import java.io.IOException;
 import java.util.Date;
 
 public class StatusCreator {
@@ -20,7 +21,12 @@ public class StatusCreator {
     public static Status createVideoStatus(String videoPath) {
         String statusId = FireConstants.getMyStatusRef(StatusType.VIDEO).push().getKey();
         String thumbImg = BitmapUtils.generateVideoThumbAsBase64(videoPath);
-        long mediaLengthInMillis = Util.getMediaLengthInMillis(MyApp.context(), videoPath);
+        long mediaLengthInMillis = 0;
+        try {
+            mediaLengthInMillis = Util.getMediaLengthInMillis(MyApp.context(), videoPath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         Status status = new Status(statusId, FireManager.getUid(), new Date().getTime(), thumbImg, null, videoPath, StatusType.VIDEO, mediaLengthInMillis);
         RealmHelper.getInstance().saveObjectToRealm(status);
         return status;
@@ -28,7 +34,7 @@ public class StatusCreator {
 
     public static Status createTextStatus(TextStatus textStatus) {
         String statusId = FireConstants.getMyStatusRef(StatusType.TEXT).push().getKey();
-        Status status = new Status(statusId, FireManager.getUid(), new Date().getTime(), textStatus,StatusType.TEXT);
+        Status status = new Status(statusId, FireManager.getUid(), new Date().getTime(), textStatus, StatusType.TEXT);
         textStatus.setStatusId(statusId);
         RealmHelper.getInstance().saveObjectToRealm(status);
         return status;

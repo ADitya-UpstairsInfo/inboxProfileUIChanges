@@ -11,103 +11,272 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@drawable/bg_1"
         tools:context=".activities.authentication.EnterPhoneNumberFragment">
 
 
         <ImageView
             android:id="@+id/img_login"
-            android:layout_width="150dp"
-            android:layout_height="200dp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingLeft="110dp"
+            android:paddingRight="110dp"
+            android:paddingBottom="10dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/otp_verification" />
+            app:srcCompat="@drawable/inbox_web_logo" />
 
-        <TextView
-            android:textColor="@color/colorText"
+        <ImageView
             android:id="@+id/tv_enter_phone_number"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:gravity="center_horizontal"
-            android:text="@string/enter_your_phone_number"
+            android:paddingLeft="60dp"
+            android:paddingRight="60dp"
+            android:textColor="@color/colorText"
             android:textSize="16sp"
             android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/img_login" />
+            app:layout_constraintTop_toBottomOf="@id/img_login"
+            app:srcCompat="@drawable/want_more" />
 
         <TextView
-            android:textColor="@color/colorText"
             android:id="@+id/tv_phone_auth_info"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center_horizontal"
             android:text="@string/phone_auth_info"
+            android:textColor="@color/colorText"
             android:textSize="16sp"
+            android:visibility="gone"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_enter_phone_number" />
 
-
-        <LinearLayout
+        <androidx.constraintlayout.widget.Guideline
+            android:id="@+id/otpless_login_guideline"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="22dp"
-            android:layout_marginEnd="8dp"
-            android:background="@drawable/textfield_border_bg"
+            android:layout_height="1dp"
             android:orientation="horizontal"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_phone_auth_info">
+            app:layout_constraintGuide_percent="0.45" />
 
-            <com.hbb20.CountryCodePicker
-                app:ccp_contentColor="@color/colorText"
-                android:id="@+id/cp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:ccp_textSize="14sp"
-                app:ccpDialog_backgroundColor="@color/white"
-                />
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:background="@drawable/rectangle_curved_from_top"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/otpless_login_guideline">
 
-            <EditText
-                android:textColorHint="@color/colorTextDesc"
-                android:textColor="@color/colorText"
-                android:id="@+id/et_number"
+
+            <TextView
+                android:id="@+id/otplessLoginSignupTextView"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical"
-                android:layout_marginStart="16dp"
+                android:layout_gravity="center"
                 android:layout_weight="1"
-                android:background="@null"
-                android:hint="Enter Phone Number"
+                android:elevation="20dp"
+                android:fontFamily="@font/nunito_medium"
+                android:foregroundGravity="top"
+                android:gravity="center"
                 android:inputType="number"
                 android:maxLines="1"
+                android:paddingTop="28dp"
+                android:paddingBottom="8dp"
+                android:text="Login / SignUp"
+                android:textColor="@color/white"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+
+            <!--Whatsapp View.-->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/otpless_whatsapp_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="18dp"
+                android:layout_marginTop="32dp"
+                android:layout_marginEnd="18dp"
+                android:background="@drawable/rectangle_4"
+                android:orientation="horizontal"
+                android:paddingTop="6dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:paddingBottom="6dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/otplessLoginSignupTextView">
+
+                <ImageView
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_gravity="center"
+                    android:layout_marginLeft="40dp"
+                    android:layout_marginRight="5dp"
+                    app:ccpDialog_backgroundColor="@color/white"
+                    app:ccp_textGravity="CENTER"
+                    app:ccp_textSize="14sp"
+                    android:padding="5dp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/guideline_2"
+
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:srcCompat="@drawable/whatsapp_icon_min" />
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/guideline_2"
+                    android:layout_width="1dp"
+                    android:layout_height="0dp"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintGuide_percent="0.35"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:background="@null"
+                    android:fontFamily="@font/nunito_medium"
+                    android:gravity="center_vertical"
+                    android:hint="Continue with Whatsapp"
+                    android:inputType="number"
+                    android:maxLines="1"
+                    android:textColor="#565353"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/guideline_2"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <TextView
+                android:id="@+id/or_txt_view"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="OR"
+                android:padding="5dp"
+                android:textColor="@color/white"
+                app:layout_constraintBottom_toTopOf="@id/otp_number_view"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/otpless_whatsapp_view" />
+
+
+            <!--Number Entry View.-->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/otp_number_view"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="18dp"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="18dp"
+                android:background="@drawable/rectangle_4"
+                android:orientation="horizontal"
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
-                android:textSize="14sp" />
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/or_txt_view">
+
+                <com.hbb20.CountryCodePicker
+                    android:id="@+id/cp"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_marginLeft="10dp"
+                    android:paddingLeft="10dp"
+                    app:ccpDialog_backgroundColor="@color/white"
+                    app:ccp_contentColor="@color/colorText"
+                    app:ccp_textGravity="CENTER"
+                    app:ccp_textSize="14sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toStartOf="@id/guideline_1"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <androidx.constraintlayout.widget.Guideline
+                    android:id="@+id/guideline_1"
+                    android:layout_width="1dp"
+                    android:layout_height="0dp"
+                    android:orientation="vertical"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintGuide_percent="0.35"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <EditText
+                    android:id="@+id/et_number"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:layout_weight="1"
+                    android:background="@null"
+                    android:fontFamily="@font/nunito_medium"
+                    android:hint="Enter Phone Number"
+                    android:inputType="number"
+                    android:maxLines="1"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:textColor="#565353"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/guideline_1"
+                    app:layout_constraintTop_toTopOf="parent" />
 
 
-        </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <Button
+                android:id="@+id/btn_verify"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:layout_marginStart="18dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginEnd="18dp"
+                android:layout_marginBottom="50dp"
+                android:background="@drawable/verify_rectangle"
+                android:text="@string/continue_"
+                android:textColor="@android:color/white"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/otp_number_view" />
+
+            <ImageView
+                android:id="@+id/img_communicate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="16dp"
+                android:layout_marginTop="22dp"
+                android:layout_marginEnd="16dp"
+                android:textColor="@android:color/white"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/btn_verify"
+                android:src="@drawable/communicate_in_png" />
+
+            <TextView
+                android:id="@+id/img_secure"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:drawableStart="@drawable/ic_baseline_lock_14"
+                android:drawableTint="@color/white"
+                android:text="448-bit encryption"
+                android:textColor="@color/white"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
 
 
-        <Button
-            android:id="@+id/btn_verify"
-            android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="42dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="50dp"
-            android:background="@drawable/bg_button_color"
-            android:text="@string/verify"
-            android:textColor="@android:color/white"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toStartOf="parent" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </ScrollView>

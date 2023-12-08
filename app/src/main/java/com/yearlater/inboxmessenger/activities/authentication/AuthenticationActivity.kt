@@ -17,8 +17,6 @@ import androidx.navigation.Navigation
 import androidx.navigation.fragment.NavHostFragment
 import com.google.android.material.snackbar.Snackbar
 import com.google.firebase.auth.*
-import com.otpless.dto.OtplessResponse
-import com.otpless.main.OtplessManager
 import com.otpless.main.OtplessView
 import com.yearlater.inboxmessenger.BuildConfig
 import com.yearlater.inboxmessenger.R
@@ -35,10 +33,12 @@ import okhttp3.MediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody
-import org.json.JSONException
 import org.json.JSONObject
 import java.net.SocketTimeoutException
+import java.net.URLEncoder
+import java.util.UUID
 import kotlin.random.Random
+
 
 class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
 
@@ -56,6 +56,9 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
     private var currentPhoneNumber = ""
     val appSignatureHelper = AppSignatureHelper(this@AuthenticationActivity)
     private lateinit var otplessView: OtplessView
+
+    private var email = "${currentPhoneNumber}inbox@inboxme.com"
+    private var password = "inbox@password"
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_authentication)
@@ -66,113 +69,14 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
         navHostFragment =
             supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment
 
-
         auth = FirebaseAuth.getInstance()
         setLoading(false)
-
-        /*authCallback = object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-            override fun onVerificationCompleted(authCredential: PhoneAuthCredential) {
-
-                if (!isCancelled)
-                    signInWithCredential(authCredential)
-            }
-
-            override fun onVerificationFailed(e: FirebaseException) {
-                setLoading(false)
-
-
-                if (e is FirebaseAuthException) {
-                    val message = FirebaseAuthError.fromException(e).description
-
-                    AlertDialog.Builder(this@AuthenticationActivity).apply {
-                        setMessage(message)
-                        setPositiveButton(R.string.ok, null)
-                        show()
-                    }
-                }
-
-
-            }
-
-            override fun onCodeSent(verificationId: String, token: PhoneAuthProvider.ForceResendingToken) {
-                super.onCodeSent(verificationId, token)
-
-                storedVerificationId = verificationId
-                resendToken = token
-
-                val bundle = bundleOf(Pair(IntentUtils.PHONE, currentPhoneNumber))
-                navigation.navigate(R.id.action_enterPhoneNumberFragment_to_verifyPhoneFragment, bundle)
-                setLoading(false)
-            }
-
-
-        }*/
-
         SharedPreferencesManager.setAppSignature("9MS/jdHO72a")
-
-        // Initialise OtplessView
-        otplessView = OtplessManager.getInstance().getOtplessView(this)
-        val extras = JSONObject().also {
-            it.put("method", "get")
-            val params = JSONObject()
-            params.put("cid", "ID0V9LIH4B5BN85L7HXGRFBIJPUEFAGN")
-            it.put("params", params)
-        }
-        otplessView.setCallback(this::onOtplessCallback, extras, true)
-//        otplessView.showOtplessLoginPage(extras, this::onOtplessCallback)
-        val body = JSONObject()
-
-        try {
-            body.put("method", "get")
-            val params = JSONObject()
-            params.put("uxmode", "anf")
-            body.put("params", params)
-        } catch (e: JSONException) {
-            throw RuntimeException(e)
-        }
-        otplessView.startOtpless(body)
-// very important to call here, verification is done on low memory recreate case
-        otplessView.verifyIntent(intent)
 
     }
 
     override fun onNewIntent(intent: Intent?) {
         super.onNewIntent(intent)
-        otplessView.verifyIntent(intent)
-    }
-
-    override fun onBackPressed() {
-        super.onBackPressed()
-        // make sure you call this code before super.onBackPressed()
-        if (otplessView.onBackPressed()) return
-    }
-
-    private fun onOtplessCallback(response: OtplessResponse) {
-        if (response.errorMessage != null) {
-            // todo error handing
-        } else {
-            try {
-                val token = response.data.optString("token")
-                // todo token verification with api
-                Toast.makeText(this, "Otp less response  : ${response.data}", Toast.LENGTH_LONG)
-                    .show()
-                var mobile = response.data.optJSONObject("mobile")
-                currentPhoneNumber = mobile.optString("number")/*
-            * Two cases
-            * a) User Already registered.  : Returning User. signIn.
-            * b) User is not registered with firebase : New User  signUp :
-            *
-            *
-            * */
-                Log.d("Otpless", "token: $token")
-            } catch (jse: JSONException) {
-                Toast.makeText(this, "JSON Error : $jse", Toast.LENGTH_SHORT).show()
-            } catch (exe: Exception) {
-                Toast.makeText(this, "Exception Error : $exe", Toast.LENGTH_SHORT).show()
-            }
-
-            signInWithCredential()
-        }
     }
 
     val client = OkHttpClient()
@@ -181,14 +85,15 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
         setLoading(true)
         val authManager = AuthManager()
         currentOtpSent = Random.nextInt(111111, 999999).toString()
-//        val smsAppNameText = "<#> The code to verify is ${currentOtpSent} Inbox Private Messenger"
-        val smsAppNameText =
-            "Inbox Private Messenger \n\r ${SharedPreferencesManager.getAppSignature()}"
+        val smsAppNameText = "Team INBOX"
+        val DLT_TE_ID_NEW_SMS = "1407169830589404358"
+        val DLT_TE_ID_FORGOT_PASSWORD_SMS = ""
+
         authManager.formatNumber(phoneNumber, countryCode)?.let { formattedNumber ->
             currentPhoneNumber = formattedNumber
             val mainLooper = Looper.getMainLooper()
             //authManager.verify(formattedNumber, this, authCallback)
-
+            email = currentPhoneNumber + "inbox@inboxme.com"
             val json = JSONObject()
             json.put("phoneNumber", currentPhoneNumber)
             json.put("verifyCode", currentOtpSent)
@@ -202,14 +107,16 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
                         ), json.toString()
                     )
 
+                    val baseUrl = "https://sms.bluesofttechnology.in/api/"
+                    val message = "Dear Customer, Your OTP is $currentOtpSent - $smsAppNameText"
+
+                    //encoding message
+                    val encoded_message = URLEncoder.encode(message)
+                    val route = "6"
+                    val authKey = "9596AoxnO6aUf40V6530aeeeP11"
                     val request = Request.Builder().url(
-                        "https://telesign-telesign-send-sms-verification-code-v1.p.rapidapi.com/" + "sms-verification-code?phoneNumber=" + "${currentPhoneNumber.trim()}&verifyCode=$currentOtpSent" + "&appName=$smsAppNameText"
-                    ).post(body).header("User-Agent", "OkHttp Headers.java").addHeader(
-                        "X-RapidAPI-Key", "3bdb2424cbmshf4db5883667e4d6p1d2965jsnb7f823788265"
-                    ).addHeader(
-                        "X-RapidAPI-Host",
-                        "telesign-telesign-send-sms-verification-code-v1.p.rapidapi.com"
-                    ).build()
+                        "$baseUrl" + "sendhttp.php?authkey=$authKey" + "&mobiles=${currentPhoneNumber.trim()}" + "&message=$message" + "&sender=INCLEG" + "&route=$route" + "&country=91" + "&DLT_TE_ID=$DLT_TE_ID_NEW_SMS"
+                    ).get().header("User-Agent", "OkHttp Headers.java").build()
 
                     val response = client.newCall(request).execute()
                     result = response.body()?.string()
@@ -232,6 +139,8 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
                             }
                         }
                     }
+                } catch (ste: SocketTimeoutException) {
+                    Log.e(TAG, "verifyPhoneNumber: ", ste)
                 } catch (err: Error) {
                     print("Error when executing get request: " + err.localizedMessage)
                 }
@@ -245,6 +154,7 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
                  signInWithCredential(credential)*/
 
             if (code == currentOtpSent || code == "898989") {
+                //checkEmailExistsOrNot(email)
                 signInWithCredential()
             } else {
                 AlertDialog.Builder(this, R.style.AlertDialogStyle).apply {
@@ -264,6 +174,78 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
         isCancelled = true
     }
 
+    fun checkEmailExistsOrNot(email: String) {
+        val myUuid = UUID.randomUUID()
+        FirebaseAuth.getInstance()
+        auth.signInWithCustomToken(myUuid.toString()).addOnCompleteListener {
+
+        }.addOnFailureListener {
+            Toast.makeText(
+                this@AuthenticationActivity, "Unable to login into application.", Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        /* auth.fetchSignInMethodsForEmail(email).addOnCompleteListener { task ->
+             Log.d(TAG, "" + task.result?.signInMethods?.size)
+             if (task.result?.signInMethods?.size === 0) {
+                 // email not existed
+                 auth.createUserWithEmailAndPassword(email, password).addOnCompleteListener { task ->
+                     setLoading(false)
+                     if (task.isSuccessful) {
+                         task.result.credential?.let {
+                             FirebaseAuth.getInstance().currentUser?.linkWithCredential(it)
+                         }
+                         FirebaseAuth.getInstance().currentUser?.let {
+                             task.result.credential?.let { it1 -> auth.signInWithCredential(it1) }
+                             auth.updateCurrentUser(it)
+                         }
+                         // Update the phone number
+                         SharedPreferencesManager.savePhoneNumber(currentPhoneNumber)
+                         startActivity(
+                             Intent(
+                                 this@AuthenticationActivity, AuthenticationActivity::class.java
+                             )
+                         )
+                     } else {
+                         Toast.makeText(
+                             this@AuthenticationActivity,
+                             "Unable to create account into application.",
+                             Toast.LENGTH_SHORT
+                         ).show()
+                     }
+                 }
+             } else {
+                 // email existed
+                 auth.signInWithEmailAndPassword(
+                     email, password
+                 ).addOnCompleteListener { task ->
+                     setLoading(false)
+                     if (task.isSuccessful) {
+                         task.result.credential?.let {
+                             FirebaseAuth.getInstance().currentUser?.linkWithCredential(it)
+                         }
+
+                         FirebaseAuth.getInstance().currentUser?.let {
+                             task.result.credential?.let { it1 -> auth.signInWithCredential(it1) }
+                             auth.updateCurrentUser(it)
+                         }
+                         // Update the phone number
+                         SharedPreferencesManager.savePhoneNumber(currentPhoneNumber)
+                         this@AuthenticationActivity.recreate()
+                     } else {
+                         Toast.makeText(
+                             this@AuthenticationActivity, "Login Failed.", Toast.LENGTH_SHORT
+                         ).show()
+                     }
+                 }
+             }
+         }.addOnFailureListener {
+             Toast.makeText(
+                 this@AuthenticationActivity, "Unable to login into application.", Toast.LENGTH_SHORT
+             ).show()
+         }*/
+    }
+
     private fun signInWithCredential() {
         setLoading(true)
         lifecycleScope.launch(Dispatchers.IO) {
@@ -273,9 +255,8 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
             val body = RequestBody.create(
                 MediaType.parse("application/json; charset=utf-8"), jsonObject.toString()
             )
-            try {/*  val request = Request.Builder()
-                    .url("http://inbox8-env.eba-ux6tjyje.ap-south-1.elasticbeanstalk.com/getToken")
-                    //.url("http:/10.0.2.2:8090/getToken")
+            try {
+                val request = Request.Builder().url("http://37.220.31.85:8090/getToken")
                     .post(body).header("User-Agent", "OkHttp Headers.java").build()
                 val response = client.newCall(request).execute()
                 result = response.body()?.string()
@@ -287,39 +268,17 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
                     val userId = jsonObject.getString("userid")
                     Log.i(TAG, "signInWithCredential: result : $result")
                     Log.i(TAG, "LoggedIn UserId ${userId} ")
-                */
 
-                // Create a PhoneAuthCredential object using the phone number
-                auth.signInWithEmailAndPassword(
-                    "${currentPhoneNumber}inbox@inboxme.com", "inbox@password"
-                ).addOnCompleteListener { task ->
-                    setLoading(false)/*                    Log.i(TAG, "signInWithCredential: task $task")
-                    Log.i(TAG, "signInWithCredential: taskResult ${task.result}")
-                    Log.i(
-                        TAG, "signInWithCredential: taskResultUser ${task.result.user.toString()}"
-                    )*/
-                    if (task.isSuccessful) {
-                        task.result.credential?.let {
-                            FirebaseAuth.getInstance().currentUser?.linkWithCredential(it)
-                        }
-                        FirebaseAuth.getInstance().currentUser?.let {
-                            task.result.credential?.let { it1 -> auth.signInWithCredential(it1) }
-                            auth.updateCurrentUser(it)
-                        }
-                        // Update the phone number
-                        SharedPreferencesManager.savePhoneNumber(currentPhoneNumber)
-                        startActivity(
-                            Intent(
-                                this@AuthenticationActivity, AuthenticationActivity::class.java
-                            )
+                    // Create a PhoneAuthCredential object using the phone number
+                    auth.signInWithCustomToken(customtoken).addOnCompleteListener { task ->
+                        setLoading(false)
+                        Log.i(TAG, "signInWithCredential: task $task")
+                        Log.i(TAG, "signInWithCredential: taskResult ${task.result}")
+                        Log.i(
+                            TAG,
+                            "signInWithCredential: taskResultUser ${task.result.user.toString()}"
                         )
-                    } else {
-                        auth.createUserWithEmailAndPassword(
-                            "${currentPhoneNumber}inbox@inboxme.com", "inbox@password"
-                        ).addOnCompleteListener { task ->
-                            Toast.makeText(
-                                this@AuthenticationActivity, "Account Created ", Toast.LENGTH_SHORT
-                            ).show()
+                        if (task.isSuccessful) {
                             task.result.credential?.let {
                                 FirebaseAuth.getInstance().currentUser?.linkWithCredential(it)
                             }
@@ -327,36 +286,34 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
                                 task.result.credential?.let { it1 -> auth.signInWithCredential(it1) }
                                 auth.updateCurrentUser(it)
                             }
+
                             // Update the phone number
                             SharedPreferencesManager.savePhoneNumber(currentPhoneNumber)
-                            startActivity(
-                                Intent(
-                                    this@AuthenticationActivity, AuthenticationActivity::class.java
-                                )
-                            )
-                        }
-                        task.exception?.let { exception ->
-                            if (exception is FirebaseAuthInvalidCredentialsException) {
-                                Handler(mainLooper).post {
-                                    AlertDialog.Builder(
-                                        this@AuthenticationActivity, R.style.AlertDialogStyle
-                                    ).apply {
-                                        setMessage(R.string.invalid_verification_code)
-                                        setPositiveButton(R.string.ok, null)
-                                        show()
+                            this@AuthenticationActivity.recreate()
+                        } else {
+                            task.exception?.let { exception ->
+                                if (exception is FirebaseAuthInvalidCredentialsException) {
+                                    Handler(mainLooper).post {
+                                        AlertDialog.Builder(
+                                            this@AuthenticationActivity, R.style.AlertDialogStyle
+                                        ).apply {
+                                            setMessage(R.string.invalid_verification_code)
+                                            setPositiveButton(R.string.ok, null)
+                                            show()
+                                        }
                                     }
-                                }
-                            } else {
-                                Util.showSnackbar(
-                                    this@AuthenticationActivity,
-                                    exception.localizedMessage,
-                                    Snackbar.LENGTH_LONG
-                                )
+                                } else {
+                                    Util.showSnackbar(
+                                        this@AuthenticationActivity,
+                                        exception.localizedMessage,
+                                        Snackbar.LENGTH_LONG
+                                    )
 
+                                }
                             }
                         }
                     }
-                }/*} else {
+                } else {
                     Handler(mainLooper).post {
                         AlertDialog.Builder(this@AuthenticationActivity, R.style.AlertDialogStyle)
                             .apply {
@@ -365,56 +322,34 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
                                 show()
                             }
                     }
-                }*/
+                }
             } catch (sce: SocketTimeoutException) {
-                AlertDialog.Builder(this@AuthenticationActivity, R.style.AlertDialogStyle).apply {
-                    setMessage(if (BuildConfig.DEBUG) sce.message else "Service is down. Please check after some time.")
-                    setPositiveButton(R.string.ok, null)
-                    show()
-                }
-            } catch (ex: Exception) {
-                AlertDialog.Builder(this@AuthenticationActivity, R.style.AlertDialogStyle).apply {
-                    setMessage(if (BuildConfig.DEBUG) ex.message else "Service is down. Please check after some time.")
-                    setPositiveButton(R.string.ok, null)
-                    show()
-                }
-            }
-        }
-
-        /*
-                auth.signInWithCustomToken(result.toString(),credential).let { authResults ->
-                    authResults.addOnCompleteListener { task ->
-            if (task.isSuccessful) {
-                            authResults.result.credential?.let {
-                                FirebaseAuth.getInstance().currentUser?.linkWithCredential(it) }
-                                FirebaseAuth.getInstance().currentUser?.let {
-                                    authResults.result.credential?.let { it1 -> auth.signInWithCredential(it1) }
-                                    auth.updateCurrentUser(it)
-                                }
-                            // Update the phone number
-                            SharedPreferencesManager.savePhoneNumber(currentPhoneNumber)
-                            startSplashActivity()
-            } else {
-                task.exception?.let { exception ->
-                    if (exception is FirebaseAuthInvalidCredentialsException) {
-                                    AlertDialog.Builder(this@AuthenticationActivity, R.style.AlertDialogStyle).apply {
-                            setMessage(R.string.invalid_verification_code)
+                Handler(mainLooper).post {
+                    AlertDialog.Builder(this@AuthenticationActivity, R.style.AlertDialogStyle)
+                        .apply {
+                            setMessage(if (BuildConfig.DEBUG) sce.message else "Service is down. Please check after some time.")
                             setPositiveButton(R.string.ok, null)
                             show()
                         }
-                    } else {
-                                    Util.showSnackbar(this@AuthenticationActivity, exception.localizedMessage, Snackbar.LENGTH_LONG)
-                    }
+                }
+            } catch (ex: Exception) {
+                Handler(mainLooper).post {
+                    AlertDialog.Builder(this@AuthenticationActivity, R.style.AlertDialogStyle)
+                        .apply {
+                            setMessage(if (BuildConfig.DEBUG) ex.message else "Service is down. Please check after some time.")
+                            setPositiveButton(R.string.ok, null)
+                            show()
+                        }
                 }
             }
-
         }
-                }*/
+
+
     }
 
     private fun setLoading(setLoading: Boolean) {
         progressbar.isVisible = setLoading
-
+        if (!this.navHostFragment.isAdded) return;
         navHostFragment.childFragmentManager.fragments.getOrNull(0)?.let { fragment ->
             if (fragment is BaseAuthFragment) {
                 if (setLoading) fragment.disableViews()
@@ -439,6 +374,4 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
         startActivity(intent)
         finish()
     }
-
-
 }

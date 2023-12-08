@@ -18,11 +18,7 @@ public class PermissionsUtil {
 
     public static final String[] permissions13 = new String[]{
             Manifest.permission.READ_CONTACTS, Manifest.permission.CAMERA
-            , Manifest.permission.RECORD_AUDIO,
-            Manifest.permission.READ_MEDIA_VIDEO,
-            Manifest.permission.READ_MEDIA_AUDIO,
-            Manifest.permission.READ_MEDIA_IMAGES,
-            Manifest.permission.POST_NOTIFICATIONS
+            , Manifest.permission.RECORD_AUDIO
     };
 
 

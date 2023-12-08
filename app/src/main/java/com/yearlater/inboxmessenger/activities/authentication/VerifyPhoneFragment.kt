@@ -24,8 +24,9 @@ class VerifyPhoneFragment : BaseAuthFragment(), SmsBroadcastReceiver.SmsListener
     private var TAG = "VerifyPhoneFragment"
 
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?,
-                              savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View? {
         // Inflate the layout for this fragment
         return inflater.inflate(R.layout.fragment_verify_phone, container, false)
     }
@@ -43,22 +44,21 @@ class VerifyPhoneFragment : BaseAuthFragment(), SmsBroadcastReceiver.SmsListener
             }
         }
 
-
-        val callback: OnBackPressedCallback = object : OnBackPressedCallback(true /* enabled by default */) {
-            override fun handleOnBackPressed() {
-
-                AlertDialog.Builder(requireActivity()).apply {
-                    setMessage(R.string.cancel_verification_confirmation_message)
-                    setNegativeButton(R.string.no, null)
-                    setPositiveButton(R.string.yes) { _, _ ->
-                        callbacks?.cancelVerificationRequest()
-                        Navigation.findNavController(et_otp).navigateUp()
+        val callback: OnBackPressedCallback =
+            object : OnBackPressedCallback(true /* enabled by default */) {
+                override fun handleOnBackPressed() {
+                    AlertDialog.Builder(requireActivity()).apply {
+                        setMessage(R.string.cancel_verification_confirmation_message)
+                        setNegativeButton(R.string.no, null)
+                        setPositiveButton(R.string.yes) { _, _ ->
+                            callbacks?.cancelVerificationRequest()
+                            Navigation.findNavController(et_otp).navigateUp()
+                        }
+                        show()
                     }
-                    show()
-                }
 
+                }
             }
-        }
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, callback)
 
@@ -75,7 +75,7 @@ class VerifyPhoneFragment : BaseAuthFragment(), SmsBroadcastReceiver.SmsListener
         }
         task?.addOnFailureListener {
             // SMS retrieval failed to start
-            Log.i(TAG, "startSmsRetriever: SMS reading failed. ${it.toString()}")
+            Log.i(TAG, "startSmsRetriever: SMS reading failed. $it")
         }
     }
 

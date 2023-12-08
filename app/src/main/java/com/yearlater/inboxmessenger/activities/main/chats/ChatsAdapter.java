@@ -51,35 +51,18 @@ import io.realm.RealmResults;
 //the RealmRecyclerViewAdapter provides autoUpdate feature
 //which will handle changes in list automatically with smooth animations
 public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.ViewHolder> {
-    private Context context;
     //chats list
     List<Chat> originalList;
     List<Chat> chatList;
-
     //this list will contain the selected chats when user start selecting chats
     List<Chat> selectedChatForActionMode = new ArrayList<>();
-
     //this hashmap is to save typing state when user scrolls
     //because the recyclerView will not save it
     HashMap<String, Integer> typingStatHashmap = new HashMap<>();
-    HashMap<Integer,String> onlineStateMapping = new HashMap<>();
+    HashMap<Integer, String> onlineStateMapping = new HashMap<>();
     ChatsAdapterCallback callback;
-
-    public interface ChatsAdapterCallback {
-        void userProfileClicked(User user);
-
-        void onClick(Chat chat, View itemView);
-
-        void onLongClick(Chat chat, View itemView);
-
-        void onBind(int pos,Chat chat);
-    }
-
-    private CompositeDisposable disposables = new CompositeDisposable();
-
-    void onDestroy() {
-        disposables.dispose();
-    }
+    private final Context context;
+    private final CompositeDisposable disposables = new CompositeDisposable();
 
     public ChatsAdapter(@Nullable OrderedRealmCollection<Chat> data, boolean autoUpdate, Context context, ChatsAdapterCallback callback) {
         super(data, autoUpdate);
@@ -89,7 +72,9 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
         chatList = data;
     }
 
-
+    void onDestroy() {
+        disposables.dispose();
+    }
 
     @Override
     public RecyclerView.ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -103,17 +88,15 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
         final User user = chat.getUser();
 
         final ChatsHolder mHolder = (ChatsHolder) holder;
-        if (user.isGroupBool())
-        {
+        if (user.isGroupBool()) {
             holder.itemView.setVisibility(View.GONE);
             holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(0, 0));
-        }else {
+        } else {
             holder.itemView.setVisibility(View.VISIBLE);
             holder.itemView.setLayoutParams(new RecyclerView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
         }
 
-        if (callback !=null)
-            callback.onBind(holder.getAdapterPosition(),chat);
+        if (callback != null) callback.onBind(holder.getAdapterPosition(), chat);
 
         //if other user is typing then show typing layout
         //this will set the state over scrolling
@@ -123,11 +106,10 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
             mHolder.countUnreadBadge.setVisibility(View.GONE);
 
             int stat = typingStatHashmap.get(chat.getChatId());
-            if (stat == TypingStat.TYPING)
-                if (stat == TypingStat.TYPING)
-                    mHolder.tvTypingStat.setText(context.getResources().getString(R.string.typing));
-                else if (stat == TypingStat.RECORDING)
-                    mHolder.tvTypingStat.setText(context.getResources().getString(R.string.recording));
+            if (stat == TypingStat.TYPING) if (stat == TypingStat.TYPING)
+                mHolder.tvTypingStat.setText(context.getResources().getString(R.string.typing));
+            else if (stat == TypingStat.RECORDING)
+                mHolder.tvTypingStat.setText(context.getResources().getString(R.string.recording));
 
 
             //otherwise set default state and show last message layout
@@ -143,8 +125,7 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
 
         //set the user name from phonebook
         String name = "";
-        if (user != null)
-            name = user.getProperUserName();
+        if (user != null) name = user.getProperUserName();
 
 
         mHolder.tvTitle.setText(name);
@@ -214,8 +195,7 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
         int unreadCount = chat.getUnReadCount();
 
         //if there are unread messages hide the unread count badge
-        if (unreadCount == 0)
-            mHolder.countUnreadBadge.setVisibility(View.GONE);
+        if (unreadCount == 0) mHolder.countUnreadBadge.setVisibility(View.GONE);
             //otherwise show it and set the unread count
         else {
             mHolder.countUnreadBadge.setVisibility(View.VISIBLE);
@@ -299,11 +279,11 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
         return drawable;
     }
 
-
     @Override
     public int getItemCount() {
         return chatList.size();
     }
+
     @Override
     public long getItemId(int position) {
         return position;
@@ -314,59 +294,29 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
         return position;
     }
 
-    public class ChatsHolder extends RecyclerView.ViewHolder {
-        private RelativeLayout rlltBody;
-        private ImageView userProfile;
-
-        public TextView tvTitle, tvLastMessage, timeChats, tvTypingStat, countUnreadBadge;
-
-        public ImageView imgReadTagChats, onlineStatIcon;
-
-
-        public ChatsHolder(View itemView) {
-            super(itemView);
-            rlltBody = itemView.findViewById(R.id.container_layout);
-            userProfile = itemView.findViewById(R.id.user_photo);
-//            onlineStatIcon = itemView.findViewById(R.id.img_online);
-            tvTitle = itemView.findViewById(R.id.tv_name);
-            tvLastMessage = itemView.findViewById(R.id.tv_last_message);
-            timeChats = itemView.findViewById(R.id.time_chats);
-            imgReadTagChats = itemView.findViewById(R.id.img_read_tag_chats);
-            countUnreadBadge = itemView.findViewById(R.id.count_unread_badge);
-
-            tvTypingStat = itemView.findViewById(R.id.tv_typing_stat);
-
-        }
-    }
-
-
     private void loadUserPhoto(final User user, final ImageView imageView) {
-        if (user == null)
-            return;
-        if (user.getUid() == null)
-            return;
+        if (user == null) return;
+        if (user.getUid() == null) return;
         if (user.isBroadcastBool())
             imageView.setImageDrawable(AppCompatResources.getDrawable(context, R.drawable.ic_broadcast_with_bg));
         else if (user.getThumbImg() != null) {
             float size = context.getResources().getDimension(R.dimen.profile_pic_size);
-            Glide.with(context)
-                    .asBitmap()
-                    .override((int) size, (int) size)
-                    .load(user.getThumbImg())
-                    .into(new CustomTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                            AdapterHelper.drawProfileImage(resource, imageView, context);
-                        }
-                        @Override
-                        public void onLoadCleared(@Nullable Drawable placeholder) {
-                        }
-                        @Override
-                        public void onLoadFailed(@Nullable @org.jetbrains.annotations.Nullable Drawable errorDrawable) {
-                            super.onLoadFailed(errorDrawable);
-                        }
-                    });
-          //  GlideApp.with(context).load(user.getThumbImg()).into(imageView);
+            Glide.with(context).asBitmap().override((int) size, (int) size).load(user.getThumbImg()).into(new CustomTarget<Bitmap>() {
+                @Override
+                public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                    AdapterHelper.drawProfileImage(resource, imageView, context);
+                }
+
+                @Override
+                public void onLoadCleared(@Nullable Drawable placeholder) {
+                }
+
+                @Override
+                public void onLoadFailed(@Nullable @org.jetbrains.annotations.Nullable Drawable errorDrawable) {
+                    super.onLoadFailed(errorDrawable);
+                }
+            });
+            //  GlideApp.with(context).load(user.getThumbImg()).into(imageView);
 
         }
 
@@ -383,7 +333,6 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
 //        }
     }
 
-
     void itemAdded(View view, Chat chat) {
         //add chat to list
         selectedChatForActionMode.add(chat);
@@ -393,13 +342,8 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
 
     //set the background color on scroll because of default behavior of recyclerView
     void keepActionModeItemsSelected(View itemView, Chat chat) {
-        if (selectedChatForActionMode.contains(chat)) {
-            setBackgroundColor(itemView, true);
-        } else {
-            setBackgroundColor(itemView, false);
-        }
+        setBackgroundColor(itemView, selectedChatForActionMode.contains(chat));
     }
-
 
     //remove chat from selected list
     void itemRemoved(View view, Chat chat) {
@@ -409,13 +353,11 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
         selectedChatForActionMode.remove(chat);
     }
 
-
     //exit action mode and notify the adapter to redraw the default items
     public void exitActionMode() {
         selectedChatForActionMode.clear();
         notifyDataSetChanged();
     }
-
 
     private void setBackgroundColor(View view, boolean isAdded) {
         if (isAdded)
@@ -434,6 +376,40 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
         }
 
         notifyDataSetChanged();
+    }
+
+
+    public interface ChatsAdapterCallback {
+        void userProfileClicked(User user);
+
+        void onClick(Chat chat, View itemView);
+
+        void onLongClick(Chat chat, View itemView);
+
+        void onBind(int pos, Chat chat);
+    }
+
+    public class ChatsHolder extends RecyclerView.ViewHolder {
+        public TextView tvTitle, tvLastMessage, timeChats, tvTypingStat, countUnreadBadge;
+        public ImageView imgReadTagChats, onlineStatIcon;
+        private final RelativeLayout rlltBody;
+        private final ImageView userProfile;
+
+
+        public ChatsHolder(View itemView) {
+            super(itemView);
+            rlltBody = itemView.findViewById(R.id.container_layout);
+            userProfile = itemView.findViewById(R.id.user_photo);
+//            onlineStatIcon = itemView.findViewById(R.id.img_online);
+            tvTitle = itemView.findViewById(R.id.tv_name);
+            tvLastMessage = itemView.findViewById(R.id.tv_last_message);
+            timeChats = itemView.findViewById(R.id.time_chats);
+            imgReadTagChats = itemView.findViewById(R.id.img_read_tag_chats);
+            countUnreadBadge = itemView.findViewById(R.id.count_unread_badge);
+
+            tvTypingStat = itemView.findViewById(R.id.tv_typing_stat);
+
+        }
     }
 
 }

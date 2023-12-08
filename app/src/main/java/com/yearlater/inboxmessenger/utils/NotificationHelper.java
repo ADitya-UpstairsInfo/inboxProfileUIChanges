@@ -390,7 +390,7 @@ public class NotificationHelper extends ContextWrapper {
                 //adding stack for user (to prevent kill the app when click back since there is no previous activity launched
                 TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
                 stackBuilder.addNextIntentWithParentStack(intent);
-                pendingIntent = stackBuilder.getPendingIntent(ID_NOTIFICATION, PendingIntent.FLAG_UPDATE_CURRENT);
+                pendingIntent = stackBuilder.getPendingIntent(ID_NOTIFICATION, PendingIntent.FLAG_IMMUTABLE);
             } else {
                 //otherwise there are multiple messages from multiple users therefore just open Main Activity
                 Intent intent = new Intent(this, MainActivity.class);
@@ -408,7 +408,7 @@ public class NotificationHelper extends ContextWrapper {
 
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
 
-                    pendingIntent = stackBuilder.getPendingIntent(chat.getNotificationId(), PendingIntent.FLAG_MUTABLE);
+                    pendingIntent = stackBuilder.getPendingIntent(chat.getNotificationId(), PendingIntent.FLAG_IMMUTABLE);
 
                 } else {
                     pendingIntent = stackBuilder.getPendingIntent(chat.getNotificationId(), PendingIntent.FLAG_UPDATE_CURRENT);
@@ -418,6 +418,7 @@ public class NotificationHelper extends ContextWrapper {
                 e.printStackTrace();
             }
         }
+
         return pendingIntent;
     }
 
@@ -469,7 +470,7 @@ public class NotificationHelper extends ContextWrapper {
             replyIntent = PendingIntent.getBroadcast(this
                     , chat.getNotificationId()
                     , getMessageReplyIntent(LABEL_REPLY, chat.getChatId())
-                    , PendingIntent.FLAG_MUTABLE
+                    , PendingIntent.FLAG_IMMUTABLE
             );
         } else {
             replyIntent = PendingIntent.getBroadcast(this
@@ -496,7 +497,7 @@ public class NotificationHelper extends ContextWrapper {
             markAsReadIntent = PendingIntent.getBroadcast(this
                     , chat.getNotificationId()
                     , getMarkAsReadIntent(chat.getChatId(), chat.getUser().isGroupBool())
-                    , PendingIntent.FLAG_MUTABLE
+                    , PendingIntent.FLAG_IMMUTABLE
             );
         } else {
             markAsReadIntent = PendingIntent.getBroadcast(this
@@ -644,7 +645,7 @@ public class NotificationHelper extends ContextWrapper {
         Intent hangupIntent = getCallingActivityIntent(fireCall, IntentUtils.NOTIFICATION_ACTION_HANGUP);
         PendingIntent hangupPIntent;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            hangupPIntent = PendingIntent.getActivity(this, notificationId, hangupIntent, PendingIntent.FLAG_MUTABLE);
+            hangupPIntent = PendingIntent.getActivity(this, notificationId, hangupIntent, PendingIntent.FLAG_IMMUTABLE);
         } else {
             hangupPIntent = PendingIntent.getActivity(this, notificationId, hangupIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         }
@@ -660,7 +661,7 @@ public class NotificationHelper extends ContextWrapper {
 
         Intent notificationIntent = getCallingActivityIntent(fireCall, action);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            return PendingIntent.getActivity(this, requestCode, notificationIntent, PendingIntent.FLAG_MUTABLE);
+            return PendingIntent.getActivity(this, requestCode, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
 
         } else {
             return PendingIntent.getActivity(this, requestCode, notificationIntent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -713,7 +714,7 @@ public class NotificationHelper extends ContextWrapper {
         PendingIntent declinePIntent  ;
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
-            declinePIntent = PendingIntent.getService(this, PI_REQUEST_CODE_DECLINE, declineIntent, PendingIntent.FLAG_MUTABLE);
+            declinePIntent = PendingIntent.getService(this, PI_REQUEST_CODE_DECLINE, declineIntent, PendingIntent.FLAG_IMMUTABLE);
         } else {
             declinePIntent = PendingIntent.getService(this, PI_REQUEST_CODE_DECLINE, declineIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         }

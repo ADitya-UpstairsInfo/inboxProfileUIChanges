@@ -89,8 +89,9 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
         // Checks that the platform will allow the specified type of update.
         Log.d("TAG", "Checking for updates")
         appUpdateInfoTask.addOnSuccessListener { appUpdateInfo ->
-            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
-                && appUpdateInfo.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE)
+            if (appUpdateInfo.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE && appUpdateInfo.isUpdateTypeAllowed(
+                    AppUpdateType.FLEXIBLE
+                )
             ) {
                 // Request the update.
                 Log.d("TAG", "Update available")
@@ -114,8 +115,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
             try {
                 startActivity(
                     Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("market://details?id=${packageName}")
+                        Intent.ACTION_VIEW, Uri.parse("market://details?id=${packageName}")
                     )
                 )
             } catch (anfe: ActivityNotFoundException) {
@@ -142,8 +142,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
         init()
 
         viewModel = ViewModelProvider(
-            this,
-            ViewModelFactory(this.application)
+            this, ViewModelFactory(this.application)
         ).get(MainViewModel::class.java)
 
 
@@ -170,8 +169,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
         textStatusFab.setOnClickListener {
             startActivityForResult(
                 Intent(
-                    this,
-                    TextStatusActivity::class.java
+                    this, TextStatusActivity::class.java
                 ), REQUEST_CODE_TEXT_STATUS
             )
         }
@@ -180,17 +178,14 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
         viewPager.addOnPageChangeListener(object : ViewPager.OnPageChangeListener {
 
             override fun onPageScrolled(
-                position: Int,
-                positionOffset: Float,
-                positionOffsetPixels: Int
+                position: Int, positionOffset: Float, positionOffsetPixels: Int
             ) {
             }
 
             //onSwipe or tab change
             override fun onPageSelected(position: Int) {
                 currentPage = position
-                if (isInSearchMode)
-                    exitSearchMode()
+                if (isInSearchMode) exitSearchMode()
 
                 when (position) {
 
@@ -212,8 +207,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
                         getFragmentByPosition(1)?.let { fragment ->
                             val baseFragment = fragment as BaseFragment
                             addMarginToFab(baseFragment.isVisible && baseFragment.isAdShowing)
-                        }
-                        /*
+                        }/*
                                                 animateFab(R.drawable.floatingbutton)*/
                         fab.setImageResource(R.drawable.floatingbutton)
                         textStatusFab.hide()
@@ -225,8 +219,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
                             val baseFragment = fragment as BaseFragment
                             addMarginToFab(baseFragment.isVisible && baseFragment.isAdShowing)
 
-                        }
-                        /*       animateFab(R.drawable.inboxcamera)*/
+                        }/*       animateFab(R.drawable.inboxcamera)*/
                         fab.setImageResource(R.drawable.inboxcamera)
                         animateTextStatusFab()
 
@@ -237,8 +230,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
                         getFragmentByPosition(3)?.let { fragment ->
                             val baseFragment = fragment as BaseFragment
                             addMarginToFab(baseFragment.isVisible && baseFragment.isAdShowing)
-                        }
-                        /*animateFab(R.drawable.inboxcallc)*/
+                        }/*animateFab(R.drawable.inboxcallc)*/
                         fab.setImageResource(R.drawable.inboxcallc)
                         textStatusFab.hide()
 
@@ -297,8 +289,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
 
         }
 
-        viewModel.deleteOldMessagesIfNeeded()
-        /* viewModel.checkForUpdate().subscribe({ needsUpdate ->
+        viewModel.deleteOldMessagesIfNeeded()/* viewModel.checkForUpdate().subscribe({ needsUpdate ->
              if (needsUpdate) {
                  startUpdateActivity()
              } else {
@@ -406,8 +397,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
             startService(Intent(this, FCMRegistrationService::class.java))
 
         } else {
-            if (!SharedPreferencesManager.isTokenSaved())
-                SaveTokenJob.schedule(this, null)
+            if (!SharedPreferencesManager.isTokenSaved()) SaveTokenJob.schedule(this, null)
 
             SetLastSeenJob.schedule(this)
             UnProcessedJobs.process(this)
@@ -424,8 +414,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
         }
 
         //schedule daily job to backup messages
-        DailyBackupJob.schedule()
-
+        DailyBackupJob.schedule(this.applicationContext)
 
     }
 
@@ -456,8 +445,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
     private fun initTabLayout() {
         tabLayout.setupWithViewPager(viewPager)
         adapter = ViewPagerAdapter(
-            supportFragmentManager,
-            FragmentStatePagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT
+            supportFragmentManager, FragmentStatePagerAdapter.BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT
         )
         viewPager.adapter = adapter
         viewPager.offscreenPageLimit = 1
@@ -475,9 +463,11 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_main, menu)
         val menuItem = menu.findItem(R.id.search_item)
-        menu.findItem(R.id.new_broadcast_item).title = Html.fromHtml("<font color='#FFFFFF'>New broadcast</font>")
+        menu.findItem(R.id.new_broadcast_item).title =
+            Html.fromHtml("<font color='#FFFFFF'>New broadcast</font>")
         menu.findItem(R.id.invite_item).title = Html.fromHtml("<font color='#FFFFFF'>Invite</font>")
-        menu.findItem(R.id.settings_item).title = Html.fromHtml("<font color='#FFFFFF'>Settings</font>")
+        menu.findItem(R.id.settings_item).title =
+            Html.fromHtml("<font color='#FFFFFF'>Settings</font>")
 
         searchView = menuItem.actionView as SearchView
         searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
@@ -553,8 +543,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
 
 
     override fun onBackPressed() {
-        if (isInSearchMode)
-            exitSearchMode()
+        if (isInSearchMode) exitSearchMode()
         else {
             if (viewPager.currentItem != CHATS_TAB_INDEX) {
                 viewPager.setCurrentItem(CHATS_TAB_INDEX, true)
@@ -607,8 +596,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
     override fun addMarginToFab(isAdShowing: Boolean) {
         val layoutParams = fab.layoutParams as CoordinatorLayout.LayoutParams
         val v = if (isAdShowing) DpUtil.toPixel(
-            95f,
-            this
+            95f, this
         ) else resources.getDimensionPixelSize(R.dimen.fab_margin).toFloat()
 
 
@@ -635,8 +623,7 @@ class MainActivity : BaseActivity(), FabRotationAnimation.RotateAnimationListene
     private fun getFragmentByPosition(position: Int): Fragment? {
         return viewPager.currentItem.let {
             supportFragmentManager.findFragmentByTagForViewPager(
-                position,
-                it
+                position, it
             )
         }
     }

@@ -57,10 +57,7 @@ class SetupUserViewModel : ViewModel() {
     }
 
     private fun getUserInfoHashmap(
-        userName: String,
-        thumbImg: String,
-        photoUrl: String?,
-        filePath: String? = null
+        userName: String, thumbImg: String, photoUrl: String?, filePath: String? = null
     ): HashMap<String, Any> {
         val map = hashMapOf<String, Any>()
         map["photo"] = photoUrl!!
@@ -72,8 +69,7 @@ class SetupUserViewModel : ViewModel() {
         )
         map["status"] = defaultStatus
         val appVersion = AppVerUtil.getAppVersion(MyApp.context())
-        if (appVersion != "")
-            map["ver"] = appVersion
+        if (appVersion != "") map["ver"] = appVersion
 
         //create thumbImg and original image and compress them if the user chosen a new photo
         if (filePath != null) {
@@ -110,8 +106,6 @@ class SetupUserViewModel : ViewModel() {
         SharedPreferencesManager.saveMyStatus(defaultStatus)
         SharedPreferencesManager.setAppVersionSaved(true)
         saveCountryCode()
-
-
     }
 
     //save country code to shared preferences (see ContactUtils class for more info)
@@ -160,10 +154,8 @@ class SetupUserViewModel : ViewModel() {
         //cancel old process if exists to start a new one
         fetchUserImageDisposable?.dispose()
 
-
         val fetchGroups = groupManager.fetchUserGroups()
         val fetchBroadcasts = broadcastManager.fetchBroadcasts(FireManager.uid)
-
 
         //if the old photo not exists on server(this is the first time)
         //download the 'defaultUserProfilePhoto'
@@ -172,22 +164,13 @@ class SetupUserViewModel : ViewModel() {
             val localPhotoUrl = triple.first
             val photoUrl = triple.second
             val thumb = triple.third
-
-
             val number = FireManager.phoneNumber
-
-
             saveUserInfo(localPhotoUrl, thumb, userName)
-
-
             return@map getUserInfoHashmap(userName, thumb, photoUrl, localPhotoUrl)
         }.flatMap { userInfoMap ->
-
             val setUserInfo =
                 FireConstants.usersRef.child(FireManager.uid).updateChildrenRx(userInfoMap)
                     .toObservable<Any>()
-
-
             return@flatMap Observable.merge(fetchGroups, fetchBroadcasts, setUserInfo)
         }
     }
@@ -201,32 +184,34 @@ class SetupUserViewModel : ViewModel() {
 
                 return@map localPhotoPath
             }.flatMap { localPhotoPath ->
-            val fetchGroups = groupManager.fetchUserGroups()
-            val fetchBroadcasts = broadcastManager.fetchBroadcasts(FireManager.uid)
+                val fetchGroups = groupManager.fetchUserGroups()
+                val fetchBroadcasts = broadcastManager.fetchBroadcasts(FireManager.uid)
 
-            val userDict = getUserInfoHashmap(
-                userName,
-                currentUserPhotoThumb,
-                currentUserPhotoUrl,
-                localPhotoPath
-            )
+                val userDict = getUserInfoHashmap(
+                    userName, currentUserPhotoThumb, currentUserPhotoUrl, localPhotoPath
+                )
 
-            //set user info in Firebase
-            val setUserInfo =
-                FireConstants.usersRef.child(FireManager.uid).updateChildrenRx(userDict)
-                    .toObservable<Any>()
+                //set user info in Firebase
+                val setUserInfo =
+                    FireConstants.usersRef.child(FireManager.uid).updateChildrenRx(userDict)
+                        .toObservable<Any>()
 
 
-            return@flatMap Observable.merge(arrayListOf(fetchGroups, fetchBroadcasts, setUserInfo))
+                return@flatMap Observable.merge(
+                    arrayListOf(
+                        fetchGroups,
+                        fetchBroadcasts,
+                        setUserInfo
+                    )
+                )
 
-        }
+            }
     }
 
     private fun getUserImage(): Observable<Pair<String, String>> {
 
-        return FireConstants.usersRef.child(FireManager.uid)
-            .observeSingleValueEvent().toObservable()
-            .map { snapshot ->
+        return FireConstants.usersRef.child(FireManager.uid).observeSingleValueEvent()
+            .toObservable().map { snapshot ->
 
                 val photoUrl = snapshot.child("photo").value as? String?
                 val thumb = snapshot.child("thumbImg").value as? String?
@@ -278,34 +263,34 @@ class SetupUserViewModel : ViewModel() {
 
         return FireConstants.mainRef.child("defaultUserProfilePhoto").observeSingleValueEvent()
             .toObservable().flatMap { snap ->
-            val imgUrl = snap.value as? String?
-            if (imgUrl != null) {
+                val imgUrl = snap.value as? String?
+                if (imgUrl != null) {
 
-                _loadUserImage.value = imgUrl
-                val filePath = DirManager.generateUserProfileImage()
+                    _loadUserImage.value = imgUrl
+                    val filePath = DirManager.generateUserProfileImage()
 
-                return@flatMap FirebaseStorage.getInstance().getReferenceFromUrl(imgUrl)
-                    .getFileRx(filePath).toObservable().map { Pair(filePath, imgUrl) }
-            } else {
-                return@flatMap Observable.error<Pair<File, String>>(NoDefaultImageException())
+                    return@flatMap FirebaseStorage.getInstance().getReferenceFromUrl(imgUrl)
+                        .getFileRx(filePath).toObservable().map { Pair(filePath, imgUrl) }
+                } else {
+                    return@flatMap Observable.error<Pair<File, String>>(NoDefaultImageException())
+                }
+
+            }.map { pair ->
+
+
+                val filePath = pair.first.path
+                val imgUrl = pair.second
+
+
+                val circleBitmap =
+                    BitmapUtils.getCircleBitmap(BitmapUtils.convertFileImageToBitmap(filePath))
+                val thumbImg = BitmapUtils.decodeImageAsPng(circleBitmap)
+                currentUserPhotoThumb = thumbImg
+
+                return@map Triple(filePath, imgUrl, thumbImg)
+
+
             }
-
-        }.map { pair ->
-
-
-            val filePath = pair.first.path
-            val imgUrl = pair.second
-
-
-            val circleBitmap =
-                BitmapUtils.getCircleBitmap(BitmapUtils.convertFileImageToBitmap(filePath))
-            val thumbImg = BitmapUtils.decodeImageAsPng(circleBitmap)
-            currentUserPhotoThumb = thumbImg
-
-            return@map Triple(filePath, imgUrl, thumbImg)
-
-
-        }
     }
 
 

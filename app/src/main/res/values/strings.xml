@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="view_contact">View Contact</string>
     <string name="sign_in_cancelled">Cancelled</string>
     <string name="unknown_error">Unknown Error</string>
@@ -407,6 +407,6 @@
 
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
-
+    <string name="continue_" tools:ignore="MissingTranslation">Continue</string>
 
 </resources>
