@@ -54,13 +54,12 @@ import io.realm.Sort;
 public class RealmHelper {
 
     private static RealmHelper instance;
+    private final Realm realm;
 
     //get instance of real
     private RealmHelper() {
         realm = Realm.getDefaultInstance();
     }
-
-    private Realm realm;
 
     public static RealmHelper getInstance() {
 
@@ -72,10 +71,8 @@ public class RealmHelper {
     //save a message
     public void saveObjectToRealm(RealmObject object) {
         realm.beginTransaction();
-        if (object instanceof Message)
-            realm.copyToRealm(object);
-        else
-            realm.copyToRealmOrUpdate(object);
+        if (object instanceof Message) realm.copyToRealm(object);
+        else realm.copyToRealmOrUpdate(object);
         realm.commitTransaction();
     }
 
@@ -159,7 +156,7 @@ public class RealmHelper {
         return realm.where(Message.class).equalTo(DBConstants.MESSAGE_ID, id).findFirst();
     }
 
-    public Message  getMessage(String messageId, String chatId) {
+    public Message getMessage(String messageId, String chatId) {
         if (chatId == null) return getMessage(messageId);
         return realm.where(Message.class).equalTo(DBConstants.MESSAGE_ID, messageId).findFirst();
     }
@@ -178,8 +175,7 @@ public class RealmHelper {
     //update chat with new last message
     public void saveLastMessageForChat(String chatId, Message message) {
         Chat chat = getChat(chatId);
-        if (chat == null)
-            return;
+        if (chat == null) return;
 
 
         realm.beginTransaction();
@@ -196,8 +192,7 @@ public class RealmHelper {
     public void saveLastMessageForChat(Message message) {
         String chatId = message.getChatId();
         Chat chat = getChat(chatId);
-        if (chat == null)
-            return;
+        if (chat == null) return;
 
 
         realm.beginTransaction();
@@ -208,6 +203,14 @@ public class RealmHelper {
 
     }
 
+    public void setOnlineStatus(String chatId, Boolean isOnline) {
+        Chat chat = getChat(chatId);
+        realm.beginTransaction();
+        chat.setmIsOnline(isOnline);
+        realm.copyToRealmOrUpdate(chat);
+        realm.commitTransaction();
+
+    }
 
     public void saveEmptyChat(User user) {
         String chatId = user.getUid();
@@ -285,15 +288,11 @@ public class RealmHelper {
 
     //this will get last 7 unread messages ,it's used for apis below 24
     public List<Message> getLast7UnreadMessages() {
-        RealmResults<Message> unreadMessages = realm.where(Message.class)
-                .notEqualTo(DBConstants.FROM_ID, FireManager.getUid())
-                .notEqualTo(DBConstants.TYPE, MessageType.GROUP_EVENT)
-                .notEqualTo(DBConstants.TYPE, MessageType.RECEIVED_DELETED_MESSAGE)
+        RealmResults<Message> unreadMessages = realm.where(Message.class).notEqualTo(DBConstants.FROM_ID, FireManager.getUid()).notEqualTo(DBConstants.TYPE, MessageType.GROUP_EVENT).notEqualTo(DBConstants.TYPE, MessageType.RECEIVED_DELETED_MESSAGE)
                 //for old messages when migrating from V1.0
                 .notEqualTo(DBConstants.MESSAGE_STAT, MessageStat.READ)
                 //get only non-seen messages
-                .equalTo(DBConstants.IS_SEEN, false)
-                .findAll()
+                .equalTo(DBConstants.IS_SEEN, false).findAll()
                 //get last 7 messages
                 .sort(DBConstants.TIMESTAMP, Sort.DESCENDING);
 
@@ -309,37 +308,23 @@ public class RealmHelper {
 
 
     public List<Chat> getUnreadChats() {
-        return realm.where(Chat.class)
-                .notEqualTo(DBConstants.UNREAD_COUNT, 0)
-                .notEqualTo(DBConstants.isMuted, true)
-                .findAll()
-                .sort(DBConstants.CHAT_LAST_MESSAGE_TIMESTAMP, Sort.ASCENDING);
+        return realm.where(Chat.class).notEqualTo(DBConstants.UNREAD_COUNT, 0).notEqualTo(DBConstants.isMuted, true).findAll().sort(DBConstants.CHAT_LAST_MESSAGE_TIMESTAMP, Sort.ASCENDING);
 
 
     }
 
     public boolean areThereUnreadChats() {
-        return realm.where(Chat.class)
-                .notEqualTo(DBConstants.UNREAD_COUNT, 0)
-                .notEqualTo(DBConstants.isMuted, true)
-                .count() > 0;
+        return realm.where(Chat.class).notEqualTo(DBConstants.UNREAD_COUNT, 0).notEqualTo(DBConstants.isMuted, true).count() > 0;
 
     }
 
     public long getUnreadChatsCount() {
-        return realm.where(Chat.class)
-                .notEqualTo(DBConstants.UNREAD_COUNT, 0)
-                .notEqualTo(DBConstants.isMuted, true)
-                .count();
+        return realm.where(Chat.class).notEqualTo(DBConstants.UNREAD_COUNT, 0).notEqualTo(DBConstants.isMuted, true).count();
     }
 
 
     public long getUnreadMessagesCount() {
-        return realm.where(Chat.class)
-                .notEqualTo(DBConstants.UNREAD_COUNT, 0)
-                .notEqualTo(DBConstants.isMuted, true)
-                .sum(DBConstants.UNREAD_COUNT)
-                .longValue();
+        return realm.where(Chat.class).notEqualTo(DBConstants.UNREAD_COUNT, 0).notEqualTo(DBConstants.isMuted, true).sum(DBConstants.UNREAD_COUNT).longValue();
     }
 
 
@@ -436,17 +421,11 @@ public class RealmHelper {
     //update message state in realm to (sent,received or read)
     public void setMessagesAsReadLocally(String chatId) {
         Chat chat = getChat(chatId);
-        if (chat == null)
-            return;
+        if (chat == null) return;
 
         //if it's the same state don't update it
 
-        RealmResults<Message> unreadMessages = realm.where(Message.class)
-                .equalTo(DBConstants.CHAT_ID, chatId)
-                .notEqualTo(DBConstants.FROM_ID, FireManager.getUid())
-                .notEqualTo(DBConstants.TYPE, MessageType.GROUP_EVENT)
-                .notEqualTo(DBConstants.MESSAGE_STAT, MessageStat.READ)
-                .findAll();
+        RealmResults<Message> unreadMessages = realm.where(Message.class).equalTo(DBConstants.CHAT_ID, chatId).notEqualTo(DBConstants.FROM_ID, FireManager.getUid()).notEqualTo(DBConstants.TYPE, MessageType.GROUP_EVENT).notEqualTo(DBConstants.MESSAGE_STAT, MessageStat.READ).findAll();
 
 
         for (Message unreadMessage : unreadMessages) {
@@ -463,8 +442,7 @@ public class RealmHelper {
     public void updateVoiceMessageStatLocally(String messageId, String chatId) {
 
         Message message = getMessage(messageId, chatId);
-        if (message == null)
-            return;
+        if (message == null) return;
 
 
         //don't update it if it's seen
@@ -480,8 +458,7 @@ public class RealmHelper {
     public void updateVoiceMessageStatLocally(String messageId) {
 
         Message message = getMessage(messageId);
-        if (message == null)
-            return;
+        if (message == null) return;
 
 
         //don't update it if it's seen
@@ -515,61 +492,38 @@ public class RealmHelper {
 */
 
     public RealmResults<Message> getObservableList(String chatId) {
-        return realm.where(Message.class).equalTo(DBConstants.CHAT_ID, chatId)
-                .notEqualTo(DBConstants.MESSAGE_STAT, MessageStat.READ)
-                .findAll();
+        return realm.where(Message.class).equalTo(DBConstants.CHAT_ID, chatId).notEqualTo(DBConstants.MESSAGE_STAT, MessageStat.READ).findAll();
     }
 
     //get the messages that sent to other user and they are not received or read
     //so we can add listeners for them once they have changed
     public RealmResults<Message> getUnreadAndUnDeliveredSentMessages(String chatId, String senderUid) {
-        return realm.where(Message.class)
-                .equalTo(DBConstants.CHAT_ID, chatId)
-                .equalTo(DBConstants.FROM_ID, senderUid)
-                .equalTo(DBConstants.MESSAGE_STAT, MessageStat.SENT)
-                .or()
-                .equalTo(DBConstants.CHAT_ID, chatId)
-                .equalTo(DBConstants.FROM_ID, senderUid)
-                .equalTo(DBConstants.MESSAGE_STAT, MessageStat.RECEIVED)
-                .findAll();
+        return realm.where(Message.class).equalTo(DBConstants.CHAT_ID, chatId).equalTo(DBConstants.FROM_ID, senderUid).equalTo(DBConstants.MESSAGE_STAT, MessageStat.SENT).or().equalTo(DBConstants.CHAT_ID, chatId).equalTo(DBConstants.FROM_ID, senderUid).equalTo(DBConstants.MESSAGE_STAT, MessageStat.RECEIVED).findAll();
     }
 
 
     //get received messages that are not read to update them in Firebase database as read
     public RealmResults<Message> getUnReadIncomingMessages(String chatId) {
-        return realm.where(Message.class)
-                .equalTo(DBConstants.CHAT_ID, chatId)
-                .notEqualTo(DBConstants.FROM_ID, FireManager.getUid())
-                .notEqualTo(DBConstants.MESSAGE_STAT, MessageStat.READ)
-                .findAll();
+        return realm.where(Message.class).equalTo(DBConstants.CHAT_ID, chatId).notEqualTo(DBConstants.FROM_ID, FireManager.getUid()).notEqualTo(DBConstants.MESSAGE_STAT, MessageStat.READ).findAll();
     }
 
     //get unread sent voice messages so we can add listeners for them once they have changed
     public RealmResults<Message> getUnReadVoiceMessages(String chatId) {
-        RealmResults<Message> all = realm.where(Message.class)
-                .equalTo(DBConstants.CHAT_ID, chatId)
-                .equalTo(DBConstants.TYPE, MessageType.SENT_VOICE_MESSAGE)
-                .equalTo(DBConstants.VOICE_MESSAGE_SEEN, false)
-                .findAll();
+        RealmResults<Message> all = realm.where(Message.class).equalTo(DBConstants.CHAT_ID, chatId).equalTo(DBConstants.TYPE, MessageType.SENT_VOICE_MESSAGE).equalTo(DBConstants.VOICE_MESSAGE_SEEN, false).findAll();
 
         return all;
     }
 
     //get not sent messages to send them when internet is available
     public RealmResults<Message> getPendingMessages() {
-        return realm.where(Message.class)
-                .notEqualTo(DBConstants.TYPE, MessageType.GROUP_EVENT)
-                .equalTo(DBConstants.MESSAGE_STAT, MessageStat.PENDING)
+        return realm.where(Message.class).notEqualTo(DBConstants.TYPE, MessageType.GROUP_EVENT).equalTo(DBConstants.MESSAGE_STAT, MessageStat.PENDING)
                 //don't get the cancelled messages ,since the user don't want to send them
-                .notEqualTo(DBConstants.DOWNLOAD_UPLOAD_STAT, DownloadUploadStat.CANCELLED)
-                .findAll();
+                .notEqualTo(DBConstants.DOWNLOAD_UPLOAD_STAT, DownloadUploadStat.CANCELLED).findAll();
     }
 
 
     public RealmResults<Message> getUnProcessedNetworkRequests() {
-        return realm.where(Message.class)
-                .equalTo(DBConstants.DOWNLOAD_UPLOAD_STAT, DownloadUploadStat.LOADING)
-                .findAll();
+        return realm.where(Message.class).equalTo(DBConstants.DOWNLOAD_UPLOAD_STAT, DownloadUploadStat.LOADING).findAll();
     }
 
 
@@ -620,22 +574,7 @@ public class RealmHelper {
         //get the messages that are downloaded only:
 
 
-        return realm.where(Message.class)
-                .equalTo(DBConstants.CHAT_ID, chatId)
-                .equalTo(DBConstants.TYPE, MessageType.SENT_IMAGE)
-                .or()
-                .equalTo(DBConstants.CHAT_ID, chatId)
-                .equalTo(DBConstants.TYPE, MessageType.RECEIVED_IMAGE)
-                .equalTo(DBConstants.DOWNLOAD_UPLOAD_STAT, DownloadUploadStat.SUCCESS)
-                .or()
-                .equalTo(DBConstants.CHAT_ID, chatId)
-                .equalTo(DBConstants.TYPE, MessageType.SENT_VIDEO)
-                .or()
-                .equalTo(DBConstants.CHAT_ID, chatId)
-                .equalTo(DBConstants.TYPE, MessageType.RECEIVED_VIDEO)
-                .equalTo(DBConstants.DOWNLOAD_UPLOAD_STAT, DownloadUploadStat.SUCCESS)
-                .findAll()
-                .sort(DBConstants.TIMESTAMP);
+        return realm.where(Message.class).equalTo(DBConstants.CHAT_ID, chatId).equalTo(DBConstants.TYPE, MessageType.SENT_IMAGE).or().equalTo(DBConstants.CHAT_ID, chatId).equalTo(DBConstants.TYPE, MessageType.RECEIVED_IMAGE).equalTo(DBConstants.DOWNLOAD_UPLOAD_STAT, DownloadUploadStat.SUCCESS).or().equalTo(DBConstants.CHAT_ID, chatId).equalTo(DBConstants.TYPE, MessageType.SENT_VIDEO).or().equalTo(DBConstants.CHAT_ID, chatId).equalTo(DBConstants.TYPE, MessageType.RECEIVED_VIDEO).equalTo(DBConstants.DOWNLOAD_UPLOAD_STAT, DownloadUploadStat.SUCCESS).findAll().sort(DBConstants.TIMESTAMP);
 
 
     }
@@ -654,13 +593,7 @@ public class RealmHelper {
 
     //get all users that have installed this app and sort them by name
     public RealmResults<User> getListOfUsers() {
-        return realm.where(User.class)
-                .not()
-                .in(DBConstants.PHONE, new String[]{SharedPreferencesManager.getPhoneNumber()})
-                .equalTo(DBConstants.isGroupBool, false)
-                .equalTo(DBConstants.IS_STORED_IN_CONTACTS, true)
-                .findAll()
-                .sort(DBConstants.USERNAME);
+        return realm.where(User.class).not().in(DBConstants.PHONE, new String[]{SharedPreferencesManager.getPhoneNumber()}).equalTo(DBConstants.isGroupBool, false).equalTo(DBConstants.IS_STORED_IN_CONTACTS, true).findAll().sort(DBConstants.USERNAME);
 
 
     }
@@ -668,32 +601,21 @@ public class RealmHelper {
 
     //get all users that have installed this app and sort them by name
     public RealmResults<User> getForwardList() {
-        return realm.where(User.class)
-                .equalTo(DBConstants.isGroupBool, true)
-                .equalTo(DBConstants.GROUP_DOT_IS_ACTIVE, true)
-                .or()
-                .equalTo(DBConstants.isGroupBool, false)
-                .not()
-                .in(DBConstants.PHONE, new String[]{SharedPreferencesManager.getPhoneNumber()})
-                .findAll()
-                .sort(DBConstants.USERNAME, Sort.DESCENDING);
+        return realm.where(User.class).equalTo(DBConstants.isGroupBool, true).equalTo(DBConstants.GROUP_DOT_IS_ACTIVE, true).or().equalTo(DBConstants.isGroupBool, false).not().in(DBConstants.PHONE, new String[]{SharedPreferencesManager.getPhoneNumber()}).findAll().sort(DBConstants.USERNAME, Sort.DESCENDING);
     }
 
     //update user img if it's different
     public void updateUserImg(String uid, String imgUrl, String localPath, String oldLocalPath) {
         User user = realm.where(User.class).equalTo(DBConstants.UID, uid).findFirst();
-        if (user == null)
-            return;
+        if (user == null) return;
 
 
         realm.beginTransaction();
         //save the user url in realm if it's not exists
-        if (user.getPhoto() == null)
-            user.setPhoto(imgUrl);
+        if (user.getPhoto() == null) user.setPhoto(imgUrl);
         else {
             //check if it's different
-            if (!user.getPhoto().equals(imgUrl))
-                user.setPhoto(imgUrl);
+            if (!user.getPhoto().equals(imgUrl)) user.setPhoto(imgUrl);
         }
 
         //set user photo path in device
@@ -743,9 +665,7 @@ public class RealmHelper {
 
     //search for a Chat by the given name
     public RealmResults<Chat> searchForChat(String query) {
-        return realm.where(Chat.class)
-                .contains(DBConstants.USER_USERNAME, query, Case.INSENSITIVE)
-                .findAll();
+        return realm.where(Chat.class).contains(DBConstants.USER_USERNAME, query, Case.INSENSITIVE).findAll();
     }
 
     //search for a user by the given name or number
@@ -753,48 +673,16 @@ public class RealmHelper {
         RealmQuery realmQuery;
         //get users for forward activity
         if (showGroupOrNotStoredContacts) {
-            realmQuery = realm.where(User.class)
-                    .contains(DBConstants.USERNAME, query, Case.INSENSITIVE)
-                    .equalTo(DBConstants.GROUP_DOT_IS_ACTIVE, true)
-                    .equalTo(DBConstants.isGroupBool, true)
-                    .or()
-                    .contains(DBConstants.USERNAME, query, Case.INSENSITIVE)
-                    .equalTo(DBConstants.isGroupBool, false)
-                    .or()
-                    .contains(DBConstants.PHONE, query)
-                    .equalTo(DBConstants.isGroupBool, true)
-                    .equalTo(DBConstants.GROUP_DOT_IS_ACTIVE, true)
-                    .or()
-                    .contains(DBConstants.PHONE, query)
-                    .equalTo(DBConstants.isGroupBool, false)
-                    .not()
-                    .in(DBConstants.PHONE, new String[]{SharedPreferencesManager.getPhoneNumber()});
+            realmQuery = realm.where(User.class).contains(DBConstants.USERNAME, query, Case.INSENSITIVE).equalTo(DBConstants.GROUP_DOT_IS_ACTIVE, true).equalTo(DBConstants.isGroupBool, true).or().contains(DBConstants.USERNAME, query, Case.INSENSITIVE).equalTo(DBConstants.isGroupBool, false).or().contains(DBConstants.PHONE, query).equalTo(DBConstants.isGroupBool, true).equalTo(DBConstants.GROUP_DOT_IS_ACTIVE, true).or().contains(DBConstants.PHONE, query).equalTo(DBConstants.isGroupBool, false).not().in(DBConstants.PHONE, new String[]{SharedPreferencesManager.getPhoneNumber()});
         } else {
-            realmQuery = realm.where(User.class)
-                    .equalTo(DBConstants.IS_STORED_IN_CONTACTS, true)
-                    .equalTo(DBConstants.IS_GROUP, false)
-                    .contains(DBConstants.USERNAME, query, Case.INSENSITIVE)
-                    .or()
-                    .equalTo(DBConstants.IS_STORED_IN_CONTACTS, true)
-                    .equalTo(DBConstants.IS_GROUP, false)
-                    .contains(DBConstants.PHONE, query)
-                    .not()
-                    .in(DBConstants.PHONE, new String[]{SharedPreferencesManager.getPhoneNumber()});
+            realmQuery = realm.where(User.class).equalTo(DBConstants.IS_STORED_IN_CONTACTS, true).equalTo(DBConstants.IS_GROUP, false).contains(DBConstants.USERNAME, query, Case.INSENSITIVE).or().equalTo(DBConstants.IS_STORED_IN_CONTACTS, true).equalTo(DBConstants.IS_GROUP, false).contains(DBConstants.PHONE, query).not().in(DBConstants.PHONE, new String[]{SharedPreferencesManager.getPhoneNumber()});
         }
         return realmQuery.findAll();
     }
 
     //search for a text message in certain chat with the given query
     public RealmResults<Message> searchForMessage(String chatId, String query) {
-        return realm.where(Message.class)
-                .equalTo(DBConstants.CHAT_ID, chatId)
-                .contains(DBConstants.CONTENT, query, Case.INSENSITIVE)
-                .equalTo(DBConstants.TYPE, MessageType.SENT_TEXT)
-                .or()
-                .equalTo(DBConstants.CHAT_ID, chatId)
-                .contains(DBConstants.CONTENT, query, Case.INSENSITIVE)
-                .equalTo(DBConstants.TYPE, MessageType.RECEIVED_TEXT)
-                .findAll();
+        return realm.where(Message.class).equalTo(DBConstants.CHAT_ID, chatId).contains(DBConstants.CONTENT, query, Case.INSENSITIVE).equalTo(DBConstants.TYPE, MessageType.SENT_TEXT).or().equalTo(DBConstants.CHAT_ID, chatId).contains(DBConstants.CONTENT, query, Case.INSENSITIVE).equalTo(DBConstants.TYPE, MessageType.RECEIVED_TEXT).findAll();
     }
 
     //save the firebase storage path for a file in realm to use it late when forwarding
@@ -886,18 +774,13 @@ public class RealmHelper {
 
         realm.beginTransaction();
 
-        if (storedUser.getStatus() == null)
-            storedUser.setStatus(newUser.getStatus());
-        else if (!storedUser.equals(newUser.getStatus()))
-            storedUser.setStatus(newUser.getStatus());
+        if (storedUser.getStatus() == null) storedUser.setStatus(newUser.getStatus());
+        else if (!storedUser.equals(newUser.getStatus())) storedUser.setStatus(newUser.getStatus());
 
-        if (storedUser.getUserName() == null)
-            storedUser.setUserName(name);
-        else if (!storedUser.getUserName().equals(name))
-            storedUser.setUserName(name);
+        if (storedUser.getUserName() == null) storedUser.setUserName(name);
+        else if (!storedUser.getUserName().equals(name)) storedUser.setUserName(name);
 
-        if (storedUser.getThumbImg() == null)
-            storedUser.setThumbImg(newUser.getThumbImg());
+        if (storedUser.getThumbImg() == null) storedUser.setThumbImg(newUser.getThumbImg());
         else if (!storedUser.getThumbImg().equals(newUser.getThumbImg())) {
             storedUser.setThumbImg(newUser.getThumbImg());
         }
@@ -959,8 +842,7 @@ public class RealmHelper {
 
             realm.beginTransaction();
             users.remove(userToDelete);
-            if (adminsUids.contains(userToDeleteUid))
-                adminsUids.remove(userToDeleteUid);
+            adminsUids.remove(userToDeleteUid);
             realm.commitTransaction();
 
 
@@ -1025,9 +907,7 @@ public class RealmHelper {
             group.getAdminsUids().clear();
             RealmList<User> users = group.getUsers();
             User user = SharedPreferencesManager.getCurrentUser();
-            if (users.contains(user)) {
-                users.remove(user);
-            }
+            users.remove(user);
             realm.commitTransaction();
         }
     }
@@ -1077,16 +957,14 @@ public class RealmHelper {
 
                 if (MessageType.isSentType(message.getType()))
                     message.setType(MessageType.SENT_DELETED_MESSAGE);
-                else
-                    message.setType(MessageType.RECEIVED_DELETED_MESSAGE);
+                else message.setType(MessageType.RECEIVED_DELETED_MESSAGE);
 
                 String chatId = message.getChatId();
                 Chat chat = getChat(chatId);
                 if (chat != null) {
                     chat.getUnreadMessages().remove(message);
                     int unreadCount = chat.getUnReadCount();
-                    if (unreadCount > 0)
-                        chat.setUnReadCount(--unreadCount);
+                    if (unreadCount > 0) chat.setUnReadCount(--unreadCount);
                 }
 
 
@@ -1120,8 +998,7 @@ public class RealmHelper {
     public void setOnlyAdminsCanPost(String groupId, boolean b) {
         User user = getUser(groupId);
         if (user != null) {
-            if (user.getGroup().isOnlyAdminsCanPost() == b)
-                return;
+            if (user.getGroup().isOnlyAdminsCanPost() == b) return;
 
             realm.beginTransaction();
             user.getGroup().setOnlyAdminsCanPost(b);
@@ -1162,12 +1039,10 @@ public class RealmHelper {
         if (group.isOnlyAdminsCanPost() != onlyAdminsCanPost)
             group.setOnlyAdminsCanPost(onlyAdminsCanPost);
 
-        if (!groupUser.getUserName().equals(groupName))
-            groupUser.setUserName(groupName);
+        if (!groupUser.getUserName().equals(groupName)) groupUser.setUserName(groupName);
 
 
-        if (!groupUser.getThumbImg().equals(thumbImg))
-            groupUser.setThumbImg(thumbImg);
+        if (!groupUser.getThumbImg().equals(thumbImg)) groupUser.setThumbImg(thumbImg);
 
 
         for (DataSnapshot dataSnapshot : usersSnapshot.getChildren()) {
@@ -1180,9 +1055,7 @@ public class RealmHelper {
                     adminsUids.add(uid);
                 }
             } else {
-                if (adminsUids.contains(uid)) {
-                    adminsUids.remove(uid);
-                }
+                adminsUids.remove(uid);
             }
         }
 
@@ -1267,14 +1140,7 @@ public class RealmHelper {
 
     //get a list of userStatuses that are not passed 24 hours
     public RealmResults<UserStatuses> getAllStatuses() {
-        return realm.where(UserStatuses.class)
-                .not()
-                .in(DBConstants.statusUserId, new String[]{FireManager.getUid()})
-                .between(DBConstants.lastStatusTimestamp, TimeHelper.getTimeBefore24Hours(), Long.MAX_VALUE)
-                .isNotEmpty("statuses")
-                .findAll()
-                .sort(DBConstants.ARE_ALL_STATUSES_SEEN, Sort.ASCENDING
-                        , DBConstants.lastStatusTimestamp, Sort.DESCENDING);
+        return realm.where(UserStatuses.class).not().in(DBConstants.statusUserId, new String[]{FireManager.getUid()}).between(DBConstants.lastStatusTimestamp, TimeHelper.getTimeBefore24Hours(), Long.MAX_VALUE).isNotEmpty("statuses").findAll().sort(DBConstants.ARE_ALL_STATUSES_SEEN, Sort.ASCENDING, DBConstants.lastStatusTimestamp, Sort.DESCENDING);
     }
 
     public void setStatusContentAfterUpload(String statusId, String uri) {
@@ -1339,8 +1205,7 @@ public class RealmHelper {
             realm.beginTransaction();
             //if the status was not uploaded by the user then delete the status locally
             if (!userId.equals(FireManager.getUid())) {
-                if (status.getLocalPath() != null)
-                    FileUtils.deleteFile(status.getLocalPath());
+                if (status.getLocalPath() != null) FileUtils.deleteFile(status.getLocalPath());
             }
 
             userStatuses.getStatuses().remove(status);
@@ -1428,21 +1293,11 @@ public class RealmHelper {
     }
 
     public RealmResults<FireCall> searchForCall(String newText) {
-        return realm.where(FireCall.class)
-                .contains(DBConstants.USER_USERNAME, newText, Case.INSENSITIVE)
-                .findAll()
-                .sort(DBConstants.TIMESTAMP, Sort.DESCENDING);
+        return realm.where(FireCall.class).contains(DBConstants.USER_USERNAME, newText, Case.INSENSITIVE).findAll().sort(DBConstants.TIMESTAMP, Sort.DESCENDING);
     }
 
     public RealmResults<UserStatuses> searchForStatus(String newText) {
-        return realm.where(UserStatuses.class)
-                .not()
-                .in(DBConstants.statusUserId, new String[]{FireManager.getUid()})
-                .between(DBConstants.lastStatusTimestamp, TimeHelper.getTimeBefore24Hours(), new Date().getTime())
-                .contains(DBConstants.USER_USERNAME, newText, Case.INSENSITIVE)
-                .findAll()
-                .sort(DBConstants.ARE_ALL_STATUSES_SEEN, Sort.ASCENDING
-                        , DBConstants.lastStatusTimestamp, Sort.DESCENDING);
+        return realm.where(UserStatuses.class).not().in(DBConstants.statusUserId, new String[]{FireManager.getUid()}).between(DBConstants.lastStatusTimestamp, TimeHelper.getTimeBefore24Hours(), new Date().getTime()).contains(DBConstants.USER_USERNAME, newText, Case.INSENSITIVE).findAll().sort(DBConstants.ARE_ALL_STATUSES_SEEN, Sort.ASCENDING, DBConstants.lastStatusTimestamp, Sort.DESCENDING);
 
     }
 
@@ -1467,8 +1322,7 @@ public class RealmHelper {
     }
 
     public boolean isCallCancelled(String callId) {
-        if (callId == null)
-            return true;
+        if (callId == null) return true;
         FireCall fireCall = getFireCall(callId);
         if (fireCall == null) return true;
 
@@ -1586,17 +1440,15 @@ public class RealmHelper {
 
     public void saveSeenByList(String statusId, List<StatusSeenBy> seenByList) {
         Status status = getStatus(statusId);
-        Log.e("realmeheper seen"+ 1597,""+ status.getStatusId());
+        Log.e("realmeheper seen" + 1597, "" + status.getStatusId());
         if (status == null) return;
         realm.executeTransaction(realm -> {
 
 
-
             RealmList<StatusSeenBy> seenByRealmList = status.getSeenBy();
             for (StatusSeenBy statusSeenBy : seenByList) {
-                if (!seenByRealmList.contains(statusSeenBy))
-                    seenByRealmList.add(statusSeenBy);
-            Log.e("realmHelper",""+ statusSeenBy);
+                if (!seenByRealmList.contains(statusSeenBy)) seenByRealmList.add(statusSeenBy);
+                Log.e("realmHelper", "" + statusSeenBy);
 
             }
 

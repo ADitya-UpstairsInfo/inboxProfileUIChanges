@@ -1,7 +1,6 @@
 package com.yearlater.inboxmessenger.model.realms;
 
 import com.yearlater.inboxmessenger.utils.TimeHelper;
-import com.yearlater.inboxmessenger.utils.TimeHelper;
 
 import io.realm.RealmList;
 import io.realm.RealmObject;
@@ -27,19 +26,15 @@ public class Chat extends RealmObject {
 
     //if this chat is muted
     private boolean isMuted;
+    private boolean mIsOnline;
     //unread messages count
     private int unReadCount;
     //this is used when there is unread messages
     // to scroll to the first unReadMessage rather than scroll to last in recyclerView
     //and if it's empty there is no unread count
     private String firstUnreadMessageId = "";
-
     private int notificationId;
     private RealmList<Message> unreadMessages;
-
-
-
-
 
     public String getFirstUnreadMessageId() {
         return firstUnreadMessageId;
@@ -71,6 +66,14 @@ public class Chat extends RealmObject {
 
     public void setMuted(boolean muted) {
         isMuted = muted;
+    }
+
+    public boolean getmIsOnline() {
+        return mIsOnline;
+    }
+
+    public void setmIsOnline(boolean mIsOnline) {
+        this.mIsOnline = mIsOnline;
     }
 
     public String getChatId() {
@@ -110,8 +113,7 @@ public class Chat extends RealmObject {
     public boolean equals(Object obj) {
         if (obj instanceof Chat) {
             Chat chat = (Chat) obj;
-            if (chat.getChatId().equals(this.chatId))
-                return true;
+            return chat.getChatId().equals(this.chatId);
         }
         return false;
     }
@@ -119,27 +121,18 @@ public class Chat extends RealmObject {
     //to print user.toString() properly (debugging purposes)
     @Override
     public String toString() {
-        return "Chat{" +
-                "chatId='" + chatId + '\'' +
-                ", lastMessageTimestamp='" + lastMessageTimestamp + '\'' +
-                ", isMuted=" + isMuted +
-                ", unReadCount=" + unReadCount +
-                ", firstUnreadMessageId='" + firstUnreadMessageId + '\'' +
-                ", notificationId='" + notificationId + '\'' +
-                ", user=" + user +
-                '}';
+        return "Chat{" + "chatId='" + chatId + '\'' + ", lastMessageTimestamp='" + lastMessageTimestamp + '\'' + ", isMuted=" + isMuted + ",isOnline =" + mIsOnline + ", unReadCount=" + unReadCount + ", firstUnreadMessageId='" + firstUnreadMessageId + '\'' + ", notificationId='" + notificationId + '\'' + ", user=" + user + '}';
     }
 
     public String getLastMessageTimestamp() {
         return lastMessageTimestamp;
     }
 
-    public String getTime() {
-        return TimeHelper.getMessageTime(lastMessageTimestamp);
-    }
-
-
     public void setLastMessageTimestamp(String lastMessageTimestamp) {
         this.lastMessageTimestamp = lastMessageTimestamp;
+    }
+
+    public String getTime() {
+        return TimeHelper.getMessageTime(lastMessageTimestamp);
     }
 }

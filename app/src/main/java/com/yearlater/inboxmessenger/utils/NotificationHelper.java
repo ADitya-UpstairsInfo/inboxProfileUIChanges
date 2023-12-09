@@ -12,6 +12,7 @@ import android.content.ContextWrapper;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Build;
+import android.util.Log;
 
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.RemoteInput;
@@ -39,16 +40,13 @@ import me.leolin.shortcutbadger.ShortcutBadger;
 
 public class NotificationHelper extends ContextWrapper {
 
-    private static final String KEY_NOTIFICATION_GROUP = "handleNewMessage-group";
     public static final String LABEL_REPLY = "Reply";
     public static final String KEY_PRESSED_ACTION = "KEY_PRESSED_ACTION";
     public static final String KEY_TEXT_REPLY = "KEY_TEXT_REPLY";
-
     //this is used to handleNewMessage on devices below API24 since it will be only one notification
     public static final int ID_NOTIFICATION = 1;
     public static final int ID_NOTIFICATION_AUDIO = -2;
     public static final int ID_GROUP_NOTIFICATION = -1;
-
     public static final String NOTIFICATION_CHANNEL_NAME_MESSAGES = "Messages Notifications";
     public static final String NOTIFICATION_CHANNEL_ID_MESSAGES = "Messages_Notifications_ID";
     public static final String NOTIFICATION_CHANNEL_NAME_AUDIO = "Audio Notifications";
@@ -57,12 +55,10 @@ public class NotificationHelper extends ContextWrapper {
     public static final String NOTIFICATION_CHANNEL_ID_INCOMING_CALLS = "Incoming-Calls-Notifications_ID";
     public static final String NOTIFICATION_CHANNEL_NAME_CALLING = "Calls Notifications";
     public static final String NOTIFICATION_CHANNEL_NAME_INCOMING_CALLS = "Incoming Calls Notifications";
-
-
     public static final int PI_REQUEST_CODE_DECLINE = 3;
     public static final int PI_REQUEST_CODE_ANSWER = 4;
     public static final int PI_REQUEST_CODE_CLICK = 5;
-
+    private static final String KEY_NOTIFICATION_GROUP = "handleNewMessage-group";
     private static int incomingCallNotificationId = -1;
 
     private NotificationManager manager;
@@ -73,29 +69,25 @@ public class NotificationHelper extends ContextWrapper {
         //create notification channels for android Oreo+
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
 
-            NotificationChannel messagesChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID_MESSAGES,
-                    NOTIFICATION_CHANNEL_NAME_MESSAGES, NotificationManager.IMPORTANCE_HIGH);
+            NotificationChannel messagesChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID_MESSAGES, NOTIFICATION_CHANNEL_NAME_MESSAGES, NotificationManager.IMPORTANCE_HIGH);
 
             messagesChannel.setVibrationPattern(getVibrationPattern());
             getManager().createNotificationChannel(messagesChannel);
 
-            NotificationChannel audioChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID_AUDIO,
-                    NOTIFICATION_CHANNEL_NAME_AUDIO, NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationChannel audioChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID_AUDIO, NOTIFICATION_CHANNEL_NAME_AUDIO, NotificationManager.IMPORTANCE_DEFAULT);
             audioChannel.setSound(null, null);
 
             getManager().createNotificationChannel(audioChannel);
 
 
-            NotificationChannel callsChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID_CALLING,
-                    NOTIFICATION_CHANNEL_NAME_CALLING, NotificationManager.IMPORTANCE_DEFAULT);
+            NotificationChannel callsChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID_CALLING, NOTIFICATION_CHANNEL_NAME_CALLING, NotificationManager.IMPORTANCE_DEFAULT);
 
             callsChannel.setSound(null, null);
 
             getManager().createNotificationChannel(callsChannel);
 
 
-            NotificationChannel incomingCallsChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID_INCOMING_CALLS,
-                    NOTIFICATION_CHANNEL_NAME_INCOMING_CALLS, NotificationManager.IMPORTANCE_HIGH);
+            NotificationChannel incomingCallsChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID_INCOMING_CALLS, NOTIFICATION_CHANNEL_NAME_INCOMING_CALLS, NotificationManager.IMPORTANCE_HIGH);
 
             incomingCallsChannel.setSound(null, null);
 
@@ -104,10 +96,17 @@ public class NotificationHelper extends ContextWrapper {
         }
     }
 
+    public static boolean isBelowApi24() {
+        return Build.VERSION.SDK_INT < 24;
+    }
+
+    public static int generateId() {
+        return (int) ((new Date().getTime() / 1000L) % Integer.MAX_VALUE);
+    }
+
     private long[] getVibrationPattern() {
         return SharedPreferencesManager.isVibrateEnabled() ? new long[]{200, 200} : new long[0];
     }
-
 
     //get summary text (30 messages from 2 chats for example)
     private String getSubText(int messagesCount, int chatsCount) {
@@ -119,23 +118,15 @@ public class NotificationHelper extends ContextWrapper {
         return messagesCount + messages + " from " + chatsCount + chats;
     }
 
-    private String getUserNameWithNumOfMessages(int unreadCount,
-                                                String userName) {
-        if (unreadCount == 0 || unreadCount == 1)
-            return userName;
+    private String getUserNameWithNumOfMessages(int unreadCount, String userName) {
+        if (unreadCount == 0 || unreadCount == 1) return userName;
 
         return userName + " " + "(" + unreadCount + " Messages" + ")" + " ";
 
     }
 
-    public static boolean isBelowApi24() {
-        return Build.VERSION.SDK_INT < 24;
-    }
-
-
     private Bitmap getProfilePhotoAsBitmap(String thumbImg) {
-        if (thumbImg != null)
-            return BitmapUtils.encodeImage(thumbImg);
+        if (thumbImg != null) return BitmapUtils.encodeImage(thumbImg);
 
         //if thumbImg is not exists like the user data is not downloaded yet
         //then get the default placeholder image
@@ -180,7 +171,6 @@ public class NotificationHelper extends ContextWrapper {
             ShortcutBadger.applyCount(this, messagesCount);
         }
     }
-
 
     public void fireNotification(String newMessageChatId) {
         boolean isNotificationsEnabled = SharedPreferencesManager.isNotificationEnabled();
@@ -243,11 +233,7 @@ public class NotificationHelper extends ContextWrapper {
                     }
 
 
-                    NotificationCompat.Builder notificationBuilder =
-                            createNotificationBuilder(
-                                    ""
-                                    , ""
-                                    , chat, chatsCount);
+                    NotificationCompat.Builder notificationBuilder = createNotificationBuilder("", "", chat, chatsCount);
 
 
                     if (chatHashMap.size() > 1) {
@@ -318,11 +304,7 @@ public class NotificationHelper extends ContextWrapper {
                     }
 
 
-                    NotificationCompat.Builder notificationBuilder =
-                            createNotificationBuilder(
-                                    userNameWithNumOfMessages
-                                    , getMessageContent(unreadChat.getUnreadMessages().last(), true)
-                                    , unreadChat, unreadChats.size());
+                    NotificationCompat.Builder notificationBuilder = createNotificationBuilder(userNameWithNumOfMessages, getMessageContent(unreadChat.getUnreadMessages().last(), true), unreadChat, unreadChats.size());
 
                     //if it's a group we will use messaging style,otherwise we will user inboxStyle
                     notificationBuilder.setStyle(isGroup || isBelowApi24() ? messagingStyle : inboxStyle);
@@ -337,7 +319,7 @@ public class NotificationHelper extends ContextWrapper {
                     notificationBuilder.setContentIntent(pendingIntent);
 
                     //if it's a new message fire the sound and vibration if enabled,otherwise just show other notifications without bombarding the user
-                    notificationBuilder.setOnlyAlertOnce(newMessageChatId.equals(unreadChat.getChatId()) ? false : true);
+                    notificationBuilder.setOnlyAlertOnce(!newMessageChatId.equals(unreadChat.getChatId()));
 
 
                     int notificationId = unreadChat.getNotificationId();
@@ -363,13 +345,15 @@ public class NotificationHelper extends ContextWrapper {
 
                     notificationBuilder.setGroup(KEY_NOTIFICATION_GROUP);
 
-
                     notificationBuilder.addAction(getReplyActionInput(unreadChat));
                     notificationBuilder.addAction(getMarkAsReadAction(unreadChat));
 
-
-                    getManager().notify(notificationId, notificationBuilder.build());
-                    getManager().notify(ID_GROUP_NOTIFICATION, groupNotification.build());
+                    try {
+                        getManager().notify(notificationId, notificationBuilder.build());
+                        getManager().notify(ID_GROUP_NOTIFICATION, groupNotification.build());
+                    } catch (IllegalArgumentException iae) {
+                        Log.e("Aditya", "fireNotification: ", iae.getCause());
+                    }
 
                 }
             }
@@ -377,7 +361,6 @@ public class NotificationHelper extends ContextWrapper {
         }
 
     }
-
 
     //get onClick intent
     private PendingIntent getPendingIntent(Chat chat) {
@@ -408,7 +391,7 @@ public class NotificationHelper extends ContextWrapper {
 
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
 
-                    pendingIntent = stackBuilder.getPendingIntent(chat.getNotificationId(), PendingIntent.FLAG_IMMUTABLE);
+                    pendingIntent = stackBuilder.getPendingIntent(chat.getNotificationId(), PendingIntent.FLAG_MUTABLE);
 
                 } else {
                     pendingIntent = stackBuilder.getPendingIntent(chat.getNotificationId(), PendingIntent.FLAG_UPDATE_CURRENT);
@@ -422,18 +405,14 @@ public class NotificationHelper extends ContextWrapper {
         return pendingIntent;
     }
 
-    private NotificationCompat.Builder createNotificationBuilder(
-            String title, String message, Chat chat, int chatsCount) {
+    private NotificationCompat.Builder createNotificationBuilder(String title, String message, Chat chat, int chatsCount) {
 
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getApplicationContext(), NOTIFICATION_CHANNEL_ID_MESSAGES)
                 //set app icon
-                .setSmallIcon(R.mipmap.ic_notification)
-                .setContentTitle(title)
-                .setContentText(message)
+                .setSmallIcon(R.mipmap.ic_notification).setContentTitle(title).setContentText(message)
                 //color
-                .setColor(ContextCompat.getColor(this, R.color.colorWhite))
-                .setDefaults(NotificationCompat.DEFAULT_LIGHTS)
+                .setColor(ContextCompat.getColor(this, R.color.colorWhite)).setDefaults(NotificationCompat.DEFAULT_LIGHTS)
                 //Notification Sound (get it from shared preferences)
                 .setSound(SharedPreferencesManager.getRingtone())
                 //high priority to make it show as heads-up
@@ -445,8 +424,7 @@ public class NotificationHelper extends ContextWrapper {
             User user = chat.getUser();
             Bitmap largeIcon = getProfilePhotoAsBitmap(user.getThumbImg());
 
-            if (!isBelowApi24() || chatsCount == 1)
-                builder.setLargeIcon(largeIcon);
+            if (!isBelowApi24() || chatsCount == 1) builder.setLargeIcon(largeIcon);
 
         } else {
             Bitmap largeIcon = getProfilePhotoAsBitmap(null);
@@ -457,33 +435,18 @@ public class NotificationHelper extends ContextWrapper {
         return builder;
     }
 
-
     //set reply from notification action
     private NotificationCompat.Action getReplyActionInput(Chat chat) {
-        RemoteInput remoteInput = new RemoteInput.Builder(KEY_TEXT_REPLY)
-                .setLabel(this.getString(R.string.reply))
-                .build();
+        RemoteInput remoteInput = new RemoteInput.Builder(KEY_TEXT_REPLY).setLabel(this.getString(R.string.reply)).build();
 
         PendingIntent replyIntent;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
 
-            replyIntent = PendingIntent.getBroadcast(this
-                    , chat.getNotificationId()
-                    , getMessageReplyIntent(LABEL_REPLY, chat.getChatId())
-                    , PendingIntent.FLAG_IMMUTABLE
-            );
+            replyIntent = PendingIntent.getBroadcast(this, chat.getNotificationId(), getMessageReplyIntent(LABEL_REPLY, chat.getChatId()), PendingIntent.FLAG_IMMUTABLE);
         } else {
-            replyIntent = PendingIntent.getBroadcast(this
-                    , chat.getNotificationId()
-                    , getMessageReplyIntent(LABEL_REPLY, chat.getChatId())
-                    , PendingIntent.FLAG_UPDATE_CURRENT
-            );
+            replyIntent = PendingIntent.getBroadcast(this, chat.getNotificationId(), getMessageReplyIntent(LABEL_REPLY, chat.getChatId()), PendingIntent.FLAG_UPDATE_CURRENT);
         }
-        NotificationCompat.Action replyAction =
-                new NotificationCompat.Action.Builder(android.R.drawable.sym_def_app_icon,
-                        this.getString(R.string.reply), replyIntent)
-                        .addRemoteInput(remoteInput)
-                        .build();
+        NotificationCompat.Action replyAction = new NotificationCompat.Action.Builder(android.R.drawable.sym_def_app_icon, this.getString(R.string.reply), replyIntent).addRemoteInput(remoteInput).build();
 
         return replyAction;
     }
@@ -494,45 +457,25 @@ public class NotificationHelper extends ContextWrapper {
         PendingIntent markAsReadIntent;
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
 
-            markAsReadIntent = PendingIntent.getBroadcast(this
-                    , chat.getNotificationId()
-                    , getMarkAsReadIntent(chat.getChatId(), chat.getUser().isGroupBool())
-                    , PendingIntent.FLAG_IMMUTABLE
-            );
+            markAsReadIntent = PendingIntent.getBroadcast(this, chat.getNotificationId(), getMarkAsReadIntent(chat.getChatId(), chat.getUser().isGroupBool()), PendingIntent.FLAG_IMMUTABLE);
         } else {
-            markAsReadIntent = PendingIntent.getBroadcast(this
-                    , chat.getNotificationId()
-                    , getMarkAsReadIntent(chat.getChatId(), chat.getUser().isGroupBool())
-                    , PendingIntent.FLAG_UPDATE_CURRENT
-            );
+            markAsReadIntent = PendingIntent.getBroadcast(this, chat.getNotificationId(), getMarkAsReadIntent(chat.getChatId(), chat.getUser().isGroupBool()), PendingIntent.FLAG_UPDATE_CURRENT);
         }
-        NotificationCompat.Action markAsReadAction =
-                new NotificationCompat.Action.Builder(android.R.drawable.sym_def_app_icon,
-                        this.getString(R.string.mark_as_read), markAsReadIntent)
-                        .build();
+        NotificationCompat.Action markAsReadAction = new NotificationCompat.Action.Builder(android.R.drawable.sym_def_app_icon, this.getString(R.string.mark_as_read), markAsReadIntent).build();
 
         return markAsReadAction;
     }
 
-
     //start service when click on Reply and pass the user
     private Intent getMessageReplyIntent(String label, String chatId) {
         Intent intent = new Intent(this, HandleReplyReceiver.class);
-        intent
-                .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
-                .setAction(IntentUtils.INTENT_ACTION_HANDLE_REPLY)
-                .putExtra(KEY_PRESSED_ACTION, label)
-                .putExtra(IntentUtils.UID, chatId)
-                .putExtra(IntentUtils.EXTRA_CHAT_ID, chatId);
+        intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES).setAction(IntentUtils.INTENT_ACTION_HANDLE_REPLY).putExtra(KEY_PRESSED_ACTION, label).putExtra(IntentUtils.UID, chatId).putExtra(IntentUtils.EXTRA_CHAT_ID, chatId);
         return intent;
     }
 
     private Intent getMarkAsReadIntent(String chatId, boolean isGroup) {
         Intent intent = new Intent(this, MarkAsReadReceiver.class);
-        intent
-                .setAction(IntentUtils.INTENT_ACTION_MARK_AS_READ)
-                .putExtra(IntentUtils.EXTRA_CHAT_ID, chatId)
-                .putExtra(IntentUtils.IS_GROUP, isGroup);
+        intent.setAction(IntentUtils.INTENT_ACTION_MARK_AS_READ).putExtra(IntentUtils.EXTRA_CHAT_ID, chatId).putExtra(IntentUtils.IS_GROUP, isGroup);
         return intent;
     }
 
@@ -571,39 +514,25 @@ public class NotificationHelper extends ContextWrapper {
     public Notification getAudioNotification() {
         return new NotificationCompat.Builder(getApplicationContext(), NOTIFICATION_CHANNEL_ID_AUDIO)
                 //set app icon
-                .setSmallIcon(R.mipmap.ic_notification)
-                .setContentTitle(getResources().getString(R.string.playing_audio))
-                .setContentText(getResources().getString(R.string.playing_audio))
+                .setSmallIcon(R.mipmap.ic_notification).setContentTitle(getResources().getString(R.string.playing_audio)).setContentText(getResources().getString(R.string.playing_audio))
                 //color
-                .setColor(ContextCompat.getColor(this, R.color.colorWhite))
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                .build();
+                .setColor(ContextCompat.getColor(this, R.color.colorWhite)).setPriority(NotificationCompat.PRIORITY_DEFAULT).build();
     }
 
     public Notification getCallsNotifications(String userName) {
         return new NotificationCompat.Builder(getApplicationContext(), NOTIFICATION_CHANNEL_ID_AUDIO)
                 //set app icon
-                .setSmallIcon(R.mipmap.ic_notification)
-                .setContentTitle(userName)
-                .setContentText(userName)
+                .setSmallIcon(R.mipmap.ic_notification).setContentTitle(userName).setContentText(userName)
                 //color
-                .setColor(ContextCompat.getColor(this, R.color.colorWhite))
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .build();
+                .setColor(ContextCompat.getColor(this, R.color.colorWhite)).setPriority(NotificationCompat.PRIORITY_HIGH).build();
     }
-
 
     public void createMissedCallNotification(User user, String phone) {
 
 
-        PendingIntent contentIntent = PendingIntent.getActivity(this, 0,
-                new Intent(this, MainActivity.class), 0);
+        PendingIntent contentIntent = PendingIntent.getActivity(this, 0, new Intent(this, MainActivity.class), 0);
 
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID_CALLING)
-                        .setSmallIcon(R.mipmap.ic_notification)
-                        .setContentTitle(getString(R.string.missed_call_notification))
-                        .setContentText(user == null ? phone : user.getProperUserName());
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID_CALLING).setSmallIcon(R.mipmap.ic_notification).setContentTitle(getString(R.string.missed_call_notification)).setContentText(user == null ? phone : user.getProperUserName());
 
         if (user != null) {
             Bitmap largeIcon = getProfilePhotoAsBitmap(user.getThumbImg());
@@ -614,8 +543,7 @@ public class NotificationHelper extends ContextWrapper {
         mBuilder.setDefaults(Notification.DEFAULT_SOUND);
         mBuilder.setAutoCancel(true);
 
-        if (incomingCallNotificationId != -1)
-            getManager().cancel(incomingCallNotificationId);
+        if (incomingCallNotificationId != -1) getManager().cancel(incomingCallNotificationId);
 
         getManager().notify(generateId(), mBuilder.build());
     }
@@ -627,13 +555,7 @@ public class NotificationHelper extends ContextWrapper {
         PendingIntent notificationPIntent = getNotificationClickPendingIntent(fireCall, IntentUtils.NOTIFICATION_ACTION_CLICK, PI_REQUEST_CODE_CLICK);
 
         String title = fireCall.isVideo() ? getString(R.string.video_call) : getString(R.string.voice_call);
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID_CALLING)
-                        .setSmallIcon(R.mipmap.ic_notification)
-                        .setContentTitle(title)
-                        .setOnlyAlertOnce(true)
-                        .setContentIntent(notificationPIntent)
-                        .setContentText(user == null ? phoneNumber : user.getProperUserName());
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID_CALLING).setSmallIcon(R.mipmap.ic_notification).setContentTitle(title).setOnlyAlertOnce(true).setContentIntent(notificationPIntent).setContentText(user == null ? phoneNumber : user.getProperUserName());
 
 
         if (user != null) {
@@ -668,7 +590,6 @@ public class NotificationHelper extends ContextWrapper {
         }
     }
 
-
     private Intent getCallingActivityIntent(FireCall fireCall, int action) {
         Intent notificationIntent = new Intent(this, CallingActivity.class);
         String callId = fireCall.getCallId();
@@ -688,12 +609,7 @@ public class NotificationHelper extends ContextWrapper {
         String title = fireCall.isVideo() ? getString(R.string.incoming_video_call) : getString(R.string.incoming_voice_call);
 
         User user = fireCall.getUser();
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID_INCOMING_CALLS)
-                        .setSmallIcon(R.mipmap.ic_notification)
-                        .setContentTitle(title)
-                        .setFullScreenIntent(notificationPIntent, true)
-                        .setContentText(user == null ? fireCall.getPhoneNumber() : user.getProperUserName());
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID_INCOMING_CALLS).setSmallIcon(R.mipmap.ic_notification).setContentTitle(title).setFullScreenIntent(notificationPIntent, true).setContentText(user == null ? fireCall.getPhoneNumber() : user.getProperUserName());
 
         if (user != null) {
             Bitmap largeIcon = getProfilePhotoAsBitmap(user.getThumbImg());
@@ -711,7 +627,7 @@ public class NotificationHelper extends ContextWrapper {
 
 
         Intent declineIntent = CallingService.Companion.getStartIntent(this, fireCall, NOTIFICATION_ACTION_DECLINE);
-        PendingIntent declinePIntent  ;
+        PendingIntent declinePIntent;
 
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.S) {
             declinePIntent = PendingIntent.getService(this, PI_REQUEST_CODE_DECLINE, declineIntent, PendingIntent.FLAG_IMMUTABLE);
@@ -732,10 +648,6 @@ public class NotificationHelper extends ContextWrapper {
 
     public void cancelIncomingCallNotification() {
         getManager().cancel(incomingCallNotificationId);
-    }
-
-    public static int generateId() {
-        return (int) ((new Date().getTime() / 1000L) % Integer.MAX_VALUE);
     }
 
     public void notifyNotification(int notificationId, Notification notification) {

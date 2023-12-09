@@ -5,6 +5,8 @@ import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,7 +25,6 @@ import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.transition.Transition;
 import com.yearlater.inboxmessenger.R;
-import com.yearlater.inboxmessenger.activities.main.messaging.ChatActivity;
 import com.yearlater.inboxmessenger.model.constants.MessageType;
 import com.yearlater.inboxmessenger.model.constants.TypingStat;
 import com.yearlater.inboxmessenger.model.realms.Chat;
@@ -38,6 +39,7 @@ import com.yearlater.inboxmessenger.utils.RealmHelper;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 import io.reactivex.disposables.CompositeDisposable;
 import io.realm.OrderedRealmCollection;
@@ -51,6 +53,8 @@ import io.realm.RealmResults;
 //the RealmRecyclerViewAdapter provides autoUpdate feature
 //which will handle changes in list automatically with smooth animations
 public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.ViewHolder> {
+    private final Context context;
+    private final CompositeDisposable disposables = new CompositeDisposable();
     //chats list
     List<Chat> originalList;
     List<Chat> chatList;
@@ -61,8 +65,6 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
     HashMap<String, Integer> typingStatHashmap = new HashMap<>();
     HashMap<Integer, String> onlineStateMapping = new HashMap<>();
     ChatsAdapterCallback callback;
-    private final Context context;
-    private final CompositeDisposable disposables = new CompositeDisposable();
 
     public ChatsAdapter(@Nullable OrderedRealmCollection<Chat> data, boolean autoUpdate, Context context, ChatsAdapterCallback callback) {
         super(data, autoUpdate);
@@ -136,6 +138,7 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
 //            mHolder.onlineStatIcon.setVisibility(View.INVISIBLE);
 //        }
 
+        mHolder.onlineStatIcon.setVisibility(chat.getmIsOnline() ? View.VISIBLE : View.INVISIBLE);
 
         //get the lastmessage from chat
         final Message message = chat.getLastMessage();
@@ -378,6 +381,41 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
         notifyDataSetChanged();
     }
 
+    public void updateOnlineStatus(boolean isOnline, String chatId) {
+
+        for (int c = 0; c <= chatList.size() - 1; c++) {
+            Log.i("Aditya", "updateOnlineStatus: chat ID : " + chatId + " , getChatID =  " + chatList.get(c).getChatId());
+            if (Objects.equals(chatList.get(c).getChatId(), chatId)) {
+                RealmHelper.getInstance().setOnlineStatus(chatId, isOnline);
+            }
+        }
+/*
+
+        for (Chat chats : chatList) {
+            Log.i("Aditya", "Before comparision. list data : " + chats.getChatId()+" , isONline : "+chats.getmIsOnline());
+        }
+        for (Chat chats : chatList) {
+            Log.i("Aditya", "chat Id compaired. : ");
+            if (Objects.equals(chats.getChatId(), chatId)) chats.setmIsOnline(true);
+        }
+        for (Chat chats : chatList) {
+            Log.i("Aditya", "After comparision chatId. list data : " + chats.getChatId()+" , isONline : "+chats.getmIsOnline());
+        }
+        for (Chat chats : chatList) {
+            Log.i("Aditya", "user Id compaired. : ");
+            if (Objects.equals(chats.getUser().getUid(), chatId)) chats.setmIsOnline(true);
+        }
+
+
+        for (Chat chats : chatList) {
+            Log.i("Aditya", "After comparision UserID. list data : " + chats.getChatId()+" , isONline : "+chats.getmIsOnline());
+        }
+*/
+
+
+        notifyDataSetChanged();
+
+    }
 
     public interface ChatsAdapterCallback {
         void userProfileClicked(User user);
@@ -390,17 +428,17 @@ public class ChatsAdapter extends RealmRecyclerViewAdapter<Chat, RecyclerView.Vi
     }
 
     public class ChatsHolder extends RecyclerView.ViewHolder {
-        public TextView tvTitle, tvLastMessage, timeChats, tvTypingStat, countUnreadBadge;
-        public ImageView imgReadTagChats, onlineStatIcon;
         private final RelativeLayout rlltBody;
         private final ImageView userProfile;
+        public TextView tvTitle, tvLastMessage, timeChats, tvTypingStat, countUnreadBadge;
+        public ImageView imgReadTagChats, onlineStatIcon;
 
 
         public ChatsHolder(View itemView) {
             super(itemView);
             rlltBody = itemView.findViewById(R.id.container_layout);
             userProfile = itemView.findViewById(R.id.user_photo);
-//            onlineStatIcon = itemView.findViewById(R.id.img_online);
+            onlineStatIcon = itemView.findViewById(R.id.img_online);
             tvTitle = itemView.findViewById(R.id.tv_name);
             tvLastMessage = itemView.findViewById(R.id.tv_last_message);
             timeChats = itemView.findViewById(R.id.time_chats);

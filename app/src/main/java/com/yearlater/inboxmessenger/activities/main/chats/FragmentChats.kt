@@ -10,11 +10,15 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.activityViewModels
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.gms.ads.AdView
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.ValueEventListener
 import com.yearlater.inboxmessenger.R
-import com.yearlater.inboxmessenger.activities.main.messaging.ChatActivity
 import com.yearlater.inboxmessenger.activities.ProfilePhotoDialog
 import com.yearlater.inboxmessenger.activities.main.MainViewModel
 import com.yearlater.inboxmessenger.activities.main.chats.ChatsAdapter.ChatsHolder
+import com.yearlater.inboxmessenger.activities.main.messaging.ChatActivity
 import com.yearlater.inboxmessenger.fragments.BaseFragment
 import com.yearlater.inboxmessenger.interfaces.FragmentCallback
 import com.yearlater.inboxmessenger.model.constants.GroupEventTypes
@@ -29,17 +33,13 @@ import com.yearlater.inboxmessenger.utils.*
 import com.yearlater.inboxmessenger.utils.GroupTyping.GroupTypingListener
 import com.yearlater.inboxmessenger.utils.network.FireManager
 import com.yearlater.inboxmessenger.utils.network.GroupManager
-import com.google.android.gms.ads.AdView
-import com.google.firebase.database.DataSnapshot
-import com.google.firebase.database.DatabaseError
-import com.google.firebase.database.ValueEventListener
-import com.yearlater.inboxmessenger.utils.*
 import io.reactivex.disposables.CompositeDisposable
 import io.realm.OrderedRealmCollectionChangeListener
 import io.realm.RealmResults
-import kotlin.collections.ArrayList
 
-class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, ChatsAdapter.ChatsAdapterCallback {
+class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback,
+    ChatsAdapter.ChatsAdapterCallback {
+    private var presenceStat: String? = ""
     private var rvChats: RecyclerView? = null
     var adapter: ChatsAdapter? = null
     var linearLayoutManager: LinearLayoutManager? = null
@@ -62,15 +62,14 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
 
     private val groupManager = GroupManager()
     override val disposables = CompositeDisposable()
-
+    private var presenceStatListener: ValueEventListener? = null
 
     private val isHasMutedItem: Boolean
         get() {
             val selectedItems = selectedChats
 
             for (chat in selectedItems) {
-                if (chat.isMuted)
-                    return true
+                if (chat.isMuted) return true
             }
             return false
         }
@@ -81,8 +80,7 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
 
             for (chat in selectedItems) {
                 val user = chat.user
-                if (user.isGroupBool && user.group.isActive)
-                    return true
+                if (user.isGroupBool && user.group.isActive) return true
             }
             return false
         }
@@ -109,8 +107,7 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
         val selectedItems = selectedChats
         for (chat in selectedItems) {
             val user = chat.user
-            if (user.isGroupBool && user.group.isActive)
-                b = true
+            if (user.isGroupBool && user.group.isActive) b = true
             else {
                 return false
             }
@@ -120,7 +117,9 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
 
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View? {
         val view = inflater.inflate(R.layout.fragment_chats, container, false)
         init(view)
 
@@ -145,12 +144,59 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
         listenForVoiceMessageStat()
         listenForLastMessageStat()
         listenForMessagesChanges()
+        listenForFriendStat()
+        addFireListeners()
         adViewInitialized(adView)
 
-        mainViewModel.queryTextChange.observe(viewLifecycleOwner, androidx.lifecycle.Observer { text ->
-            onQueryTextChange(text)
-        })
+        mainViewModel.queryTextChange.observe(
+            viewLifecycleOwner,
+            androidx.lifecycle.Observer { text ->
+                onQueryTextChange(text)
+            })
 
+    }
+
+    private fun addFireListeners() {
+
+        fireListener?.addListener(
+            FireConstants.presenceRef.child("Online"), presenceStatListener
+        )
+
+        RealmHelper.getInstance().allChats.forEach {
+            fireListener?.addListener(
+                it.chatId?.let { it1 -> FireConstants.presenceRef.child(it1) },
+                presenceStatListener
+            )
+        }
+
+    }
+
+    //listen for friend status and see if he is online ,otherwise set last seen time
+    private fun listenForFriendStat() {
+        presenceStatListener = object : ValueEventListener {
+            override fun onDataChange(dataSnapshot: DataSnapshot) {
+                if (dataSnapshot.value == null) {
+                    return
+                }
+                val chatId = dataSnapshot.key
+                if (dataSnapshot.value is String) {
+                    presenceStat = dataSnapshot.getValue<String>(String::class.java)
+                    if (presenceStat.equals("Online", ignoreCase = true)) {
+                        adapter?.updateOnlineStatus(true, chatId)
+                        presenceStat = "Online"
+                    } else adapter?.updateOnlineStatus(false, chatId)
+                } else {
+                    adapter?.updateOnlineStatus(false, chatId)
+                    val timestamp = dataSnapshot.getValue(Long::class.java)!!
+                    presenceStat = TimeHelper.getTimeAgo(timestamp)
+                }
+
+            }
+
+            override fun onCancelled(databaseError: DatabaseError) {
+
+            }
+        }
     }
 
     override fun showAds(): Boolean {
@@ -164,17 +210,17 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
 
     //add a listener for the last message if the user has replied from the notification
     private fun listenForMessagesChanges() {
-        changeListener = OrderedRealmCollectionChangeListener<RealmResults<Chat>> { chats, changeSet ->
-            val modifications = changeSet.changeRanges
-            if (modifications.size != 0) {
-                val chat = chats[modifications[0].startIndex]
-                val lastMessage = chat!!.lastMessage
-                if (lastMessage != null && lastMessage.messageStat == MessageStat.PENDING
-                        || lastMessage != null && lastMessage.messageStat == MessageStat.SENT) {
-                    addMessageStatListener(chat.chatId, lastMessage)
+        changeListener =
+            OrderedRealmCollectionChangeListener<RealmResults<Chat>> { chats, changeSet ->
+                val modifications = changeSet.changeRanges
+                if (modifications.size != 0) {
+                    val chat = chats[modifications[0].startIndex]
+                    val lastMessage = chat!!.lastMessage
+                    if (lastMessage != null && lastMessage.messageStat == MessageStat.PENDING || lastMessage != null && lastMessage.messageStat == MessageStat.SENT) {
+                        addMessageStatListener(chat.chatId, lastMessage)
+                    }
                 }
             }
-        }
     }
 
     //listen for lastMessage stat if it's received or read by the other user
@@ -196,9 +242,9 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
         for (chat in chatList!!) {
             val lastMessage = chat.lastMessage
             val user = chat.user ?: continue
-            if (!user.isBroadcastBool && lastMessage != null && lastMessage.type != MessageType.GROUP_EVENT && lastMessage.isVoiceMessage
-                    && lastMessage.fromId == FireManager.uid && !lastMessage.isVoiceMessageSeen) {
-                val reference = FireConstants.voiceMessageStat.child(lastMessage.chatId).child(lastMessage.messageId)
+            if (!user.isBroadcastBool && lastMessage != null && lastMessage.type != MessageType.GROUP_EVENT && lastMessage.isVoiceMessage && lastMessage.fromId == FireManager.uid && !lastMessage.isVoiceMessageSeen) {
+                val reference = FireConstants.voiceMessageStat.child(lastMessage.chatId)
+                    .child(lastMessage.messageId)
                 fireListener!!.addListener(reference, voiceMessageListener)
             }
         }
@@ -209,7 +255,8 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
             val lastMessage = chat.lastMessage
             val user = chat.user ?: continue
             if (user.isBroadcastBool && lastMessage != null && lastMessage.type != MessageType.GROUP_EVENT && lastMessage.messageStat != MessageStat.READ) {
-                val reference = FireConstants.messageStat.child(chat.chatId).child(lastMessage.messageId)
+                val reference =
+                    FireConstants.messageStat.child(chat.chatId).child(lastMessage.messageId)
                 fireListener!!.addListener(reference, lastMessageStatListener)
             }
         }
@@ -266,7 +313,9 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
                     lastMessageTv.visibility = View.GONE
                     lastMessageReadIcon.visibility = View.GONE
                     typingTv.visibility = View.VISIBLE
-                    if (stat == TypingStat.TYPING) typingTv.text = resources.getString(R.string.typing) else if (stat == TypingStat.RECORDING) typingTv.text = resources.getString(R.string.recording)
+                    if (stat == TypingStat.TYPING) typingTv.text =
+                        resources.getString(R.string.typing) else if (stat == TypingStat.RECORDING) typingTv.text =
+                        resources.getString(R.string.recording)
 
                     //in case there is no typing or recording event
                     //revert back to normal mode and show last message
@@ -275,8 +324,10 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
                     typingTv.visibility = View.GONE
                     lastMessageTv.visibility = View.VISIBLE
                     val lastMessage = chatList!![i]!!.lastMessage
-                    if (lastMessage != null && lastMessage.type != MessageType.GROUP_EVENT && !MessageType.isDeletedMessage(lastMessage.type)
-                            && lastMessage.fromId == FireManager.uid) {
+                    if (lastMessage != null && lastMessage.type != MessageType.GROUP_EVENT && !MessageType.isDeletedMessage(
+                            lastMessage.type
+                        ) && lastMessage.fromId == FireManager.uid
+                    ) {
                         lastMessageReadIcon.visibility = View.VISIBLE
                     }
                 }
@@ -298,7 +349,7 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
             } else {
                 val receiverUid = user.uid
                 val typingStat = FireConstants.mainRef.child("typingStat").child(receiverUid)
-                        .child(FireManager.uid)
+                    .child(FireManager.uid)
                 fireListener!!.addListener(typingStat, typingEventListener)
             }
         }
@@ -350,8 +401,10 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
         typingTv.visibility = View.GONE
         lastMessageTv.visibility = View.VISIBLE
         val lastMessage = chatList!![i]!!.lastMessage
-        if (lastMessage != null && lastMessage.type != MessageType.GROUP_EVENT && !MessageType.isDeletedMessage(lastMessage.type)
-                && lastMessage.fromId == FireManager.uid) {
+        if (lastMessage != null && lastMessage.type != MessageType.GROUP_EVENT && !MessageType.isDeletedMessage(
+                lastMessage.type
+            ) && lastMessage.fromId == FireManager.uid
+        ) {
             lastMessageReadIcon.visibility = View.VISIBLE
         }
     }
@@ -384,22 +437,15 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
         adapter?.filter(newText)
     }
 
-    override fun onSearchClose() {
-        super.onSearchClose()
-
-    }
-
 
     override fun onClick(chat: Chat, view: View) {
 //        if isInAction mode then select or remove the clicked chat from selectedActionList
         if (isInActionMode()) {
             //if it's selected ,remove it
-            if (selectedChats.contains(chat))
-                itemRemoved(view, chat);
+            if (selectedChats.contains(chat)) itemRemoved(view, chat)
 
             //otherwise add it to list
-            else
-                itemAdded(view, chat);
+            else itemAdded(view, chat)
             //if it's not in actionMode start the chatActivity
         } else {
             chat.let {
@@ -407,7 +453,7 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
                     val user = it.user
                     val intent = Intent(context, ChatActivity::class.java)
                     intent.putExtra(IntentUtils.UID, user.uid)
-                    startActivity(intent);
+                    startActivity(intent)
                 }
             }
 
@@ -430,10 +476,10 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
 
     private fun updateActionMenuItems(itemsCount: Int) {
         if (itemsCount > 1) {
-            if (isHasMutedItem)
-                setMenuItemVisibility(false)
-            else
-                updateMutedIcon(actionMenu?.findItem(R.id.menu_item_mute), false)//if there is no muted item then the user may select multiple chats and mute them all in once
+            if (isHasMutedItem) setMenuItemVisibility(false)
+            else updateMutedIcon(
+                actionMenu?.findItem(R.id.menu_item_mute), false
+            )//if there is no muted item then the user may select multiple chats and mute them all in once
 
 
         } else if (itemsCount == 1 && selectedChats.size == 1) {
@@ -452,10 +498,8 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
         selectedChats.remove(chat)
         adapter?.itemRemoved(itemView, chat)
         actionMode?.title = selectedChats.size.toString() + ""
-        if (selectedChats.isEmpty())
-            exitActionMode()
-        else
-            updateActionMenuItems(selectedChats.size)
+        if (selectedChats.isEmpty()) exitActionMode()
+        else updateActionMenuItems(selectedChats.size)
     }
 
     private fun exitActionMode() {
@@ -538,28 +582,31 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
     }
 
     private fun exitGroupClicked() {
-        if (!NetworkHelper.isConnected(MyApp.context()))
-            return
+        if (!NetworkHelper.isConnected(MyApp.context())) return
 
         val builder = AlertDialog.Builder(requireContext())
-        builder.setTitle(R.string.confirmation)
-                .setMessage(R.string.exit_group)
-                .setNegativeButton(R.string.no, null)
-                .setPositiveButton(R.string.yes, DialogInterface.OnClickListener { _, _ ->
-                    val selectedItems = selectedChats
-                    for (chat in selectedItems) {
-                        disposables.add(groupManager.exitGroup(chat.chatId, FireManager.uid).subscribe({
+        builder.setTitle(R.string.confirmation).setMessage(R.string.exit_group)
+            .setNegativeButton(R.string.no, null)
+            .setPositiveButton(R.string.yes, DialogInterface.OnClickListener { _, _ ->
+                val selectedItems = selectedChats
+                for (chat in selectedItems) {
+                    disposables.add(
+                        groupManager.exitGroup(chat.chatId, FireManager.uid).subscribe({
                             RealmHelper.getInstance().exitGroup(chat.chatId)
-                            val groupEvent = GroupEvent(SharedPreferencesManager.getPhoneNumber(), GroupEventTypes.USER_LEFT_GROUP, null)
+                            val groupEvent = GroupEvent(
+                                SharedPreferencesManager.getPhoneNumber(),
+                                GroupEventTypes.USER_LEFT_GROUP,
+                                null
+                            )
                             groupEvent.createGroupEvent(chat.user, null)
                         }, { throwable ->
-                            Toast.makeText(requireContext(), R.string.error , Toast.LENGTH_SHORT).show();
+                            Toast.makeText(requireContext(), R.string.error, Toast.LENGTH_SHORT)
+                                .show()
                         })
-                        )
-                    }
-                    exitActionMode()
-                })
-                .show()
+                    )
+                }
+                exitActionMode()
+            }).show()
 
 
     }
@@ -567,16 +614,15 @@ class FragmentChats : BaseFragment(), GroupTypingListener, ActionMode.Callback, 
     private fun deleteItemClicked() {
         val builder = AlertDialog.Builder(requireActivity())
         builder.setTitle(R.string.confirmation)
-                .setMessage(R.string.delete_conversation_confirmation)
-                .setNegativeButton(R.string.no, null)
-                .setPositiveButton(R.string.yes, DialogInterface.OnClickListener { _, _ ->
-                    val selectedItems = selectedChats
-                    for (chat in selectedItems) {
-                        RealmHelper.getInstance().deleteChat(chat.chatId)
-                    }
-                    exitActionMode()
-                })
-                .show()
+            .setMessage(R.string.delete_conversation_confirmation)
+            .setNegativeButton(R.string.no, null)
+            .setPositiveButton(R.string.yes, DialogInterface.OnClickListener { _, _ ->
+                val selectedItems = selectedChats
+                for (chat in selectedItems) {
+                    RealmHelper.getInstance().deleteChat(chat.chatId)
+                }
+                exitActionMode()
+            }).show()
 
     }
 
