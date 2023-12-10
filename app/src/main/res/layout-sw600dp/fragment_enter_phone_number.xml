@@ -64,10 +64,12 @@
             app:layout_constraintGuide_percent="0.45" />
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="0dp"
             android:background="@drawable/rectangle_curved_from_top"
             app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/otpless_login_guideline">
 
 
@@ -97,16 +99,16 @@
             <!--Whatsapp View.-->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/otpless_whatsapp_view"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="18dp"
                 android:layout_marginTop="32dp"
-                android:layout_marginEnd="18dp"
                 android:background="@drawable/rectangle_4"
                 android:orientation="horizontal"
+                android:paddingLeft="18dp"
                 android:paddingTop="6dp"
-                app:layout_constraintEnd_toEndOf="parent"
+                android:paddingRight="38dp"
                 android:paddingBottom="6dp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/otplessLoginSignupTextView">
 
@@ -116,10 +118,10 @@
                     android:layout_gravity="center"
                     android:layout_marginLeft="40dp"
                     android:layout_marginRight="5dp"
+                    android:padding="5dp"
                     app:ccpDialog_backgroundColor="@color/white"
                     app:ccp_textGravity="CENTER"
                     app:ccp_textSize="14sp"
-                    android:padding="5dp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toStartOf="@id/guideline_2"
 
@@ -160,8 +162,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="OR"
                 android:padding="5dp"
+                android:text="OR"
                 android:textColor="@color/white"
                 app:layout_constraintBottom_toTopOf="@id/otp_number_view"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -172,15 +174,14 @@
             <!--Number Entry View.-->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/otp_number_view"
-                android:layout_width="match_parent"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="18dp"
                 android:layout_marginTop="8dp"
-                android:layout_marginEnd="18dp"
                 android:background="@drawable/rectangle_4"
                 android:orientation="horizontal"
                 android:paddingTop="8dp"
                 android:paddingBottom="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/or_txt_view">
 
@@ -211,7 +212,7 @@
 
                 <EditText
                     android:id="@+id/et_number"
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
                     android:layout_weight="1"
@@ -234,17 +235,14 @@
 
             <Button
                 android:id="@+id/btn_verify"
-                android:layout_width="match_parent"
-                android:layout_height="48dp"
-                android:layout_marginStart="18dp"
-                android:layout_marginTop="12dp"
-                android:layout_marginEnd="18dp"
+                android:layout_width="350dp"
+                android:layout_height="58dp"
+                android:layout_marginTop="32dp"
                 android:layout_marginBottom="50dp"
                 android:background="@drawable/verify_rectangle"
                 android:text="@string/continue_"
                 android:textColor="@android:color/white"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/otp_number_view" />
 
@@ -255,12 +253,12 @@
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="22dp"
                 android:layout_marginEnd="16dp"
+                android:src="@drawable/communicate_in_png"
                 android:textColor="@android:color/white"
+                app:layout_constraintBottom_toTopOf="@id/img_secure"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/btn_verify"
-                android:src="@drawable/communicate_in_png" />
+                app:layout_constraintStart_toStartOf="parent" />
 
             <TextView
                 android:id="@+id/img_secure"
@@ -270,6 +268,8 @@
                 android:drawableTint="@color/white"
                 android:text="448-bit encryption"
                 android:textColor="@color/white"
+                android:textSize="22sp"
+                android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
