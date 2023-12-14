@@ -12,11 +12,13 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.gms.ads.LoadAdError;
 import com.yearlater.inboxmessenger.R;
 import com.yearlater.inboxmessenger.activities.main.messaging.ChatActivity;
 import com.yearlater.inboxmessenger.adapters.UsersAdapter;
@@ -80,15 +82,40 @@ public class NewChatActivity extends BaseActivity implements UsersAdapter.OnItem
     private void loadAd() {
         adView.setAdListener(new AdListener() {
             @Override
-            public void onAdFailedToLoad(int i) {
-                super.onAdFailedToLoad(i);
+            public void onAdClicked() {
+                super.onAdClicked();
+            }
+
+            @Override
+            public void onAdClosed() {
+                super.onAdClosed();
+            }
+
+            @Override
+            public void onAdFailedToLoad(@NonNull LoadAdError loadAdError) {
+                super.onAdFailedToLoad(loadAdError);
                 adView.setVisibility(View.GONE);
+            }
+
+            @Override
+            public void onAdImpression() {
+                super.onAdImpression();
             }
 
             @Override
             public void onAdLoaded() {
                 super.onAdLoaded();
                 adView.setVisibility(View.VISIBLE);
+            }
+
+            @Override
+            public void onAdOpened() {
+                super.onAdOpened();
+            }
+
+            @Override
+            public void onAdSwipeGestureClicked() {
+                super.onAdSwipeGestureClicked();
             }
         });
 

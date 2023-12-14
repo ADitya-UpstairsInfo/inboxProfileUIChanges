@@ -13,8 +13,8 @@ android {
         applicationId "com.yearlater.inboxmessenger"
         minSdkVersion 19
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 100
-        versionName "5.14"
+        versionCode 54
+        versionName "3.14.09"
         multiDexEnabled true
 
         vectorDrawables.useSupportLibrary = true
@@ -103,7 +103,7 @@ dependencies {
     implementation 'com.google.firebase:firebase-auth:19.3.2'
     implementation 'com.google.firebase:firebase-database:19.6.0'
     implementation 'com.google.firebase:firebase-storage:19.2.1'
-    implementation 'com.google.firebase:firebase-ads:19.7.0'
+    implementation 'com.google.firebase:firebase-ads:22.6.0'
     implementation 'com.google.firebase:firebase-functions:19.2.0'
 
     implementation 'com.hbb20:ccp:2.4.5'
@@ -197,10 +197,6 @@ dependencies {
 
     implementation 'io.github.otpless-tech:otpless-android-sdk:2.1.6'
 }
-
-
-
-
 
 
 

@@ -4,24 +4,20 @@ import android.content.Context
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
-import com.yearlater.inboxmessenger.Base
-import com.yearlater.inboxmessenger.interfaces.FragmentCallback
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.AdView
+import com.google.android.gms.ads.LoadAdError
+import com.yearlater.inboxmessenger.Base
+import com.yearlater.inboxmessenger.interfaces.FragmentCallback
 import io.reactivex.disposables.CompositeDisposable
 
-abstract class BaseFragment : Fragment(),Base {
+abstract class BaseFragment : Fragment(), Base {
     @JvmField
     var fragmentCallback: FragmentCallback? = null
     open var adView: AdView? = null
 
     abstract fun showAds(): Boolean
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-    }
 
     override val disposables = CompositeDisposable()
 
@@ -37,8 +33,8 @@ abstract class BaseFragment : Fragment(),Base {
     fun adViewInitialized(mAdView: AdView?) {
         adView = mAdView
         val adListener: AdListener = object : AdListener() {
-            override fun onAdFailedToLoad(i: Int) {
-                super.onAdFailedToLoad(i)
+            override fun onAdFailedToLoad(p0: LoadAdError) {
+                super.onAdFailedToLoad(p0)
                 adView!!.visibility = View.GONE
                 if (fragmentCallback != null) fragmentCallback!!.addMarginToFab(false)
             }

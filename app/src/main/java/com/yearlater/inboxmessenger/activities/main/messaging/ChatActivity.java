@@ -3,13 +3,13 @@ package com.yearlater.inboxmessenger.activities.main.messaging;
 import android.animation.ArgbEvaluator;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
+import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.ClipData;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.pm.ActivityInfo;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Color;
@@ -17,7 +17,6 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.media.AudioManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Parcelable;
@@ -69,9 +68,10 @@ import com.devlomi.record_view.OnBasketAnimationEnd;
 import com.devlomi.record_view.OnRecordClickListener;
 import com.devlomi.record_view.OnRecordListener;
 import com.devlomi.record_view.RecordView;
-import com.google.android.gms.ads.AdListener;
-import com.google.android.gms.ads.AdRequest;
-import com.google.android.gms.ads.InterstitialAd;
+import com.google.android.gms.ads.FullScreenContentCallback;
+import com.google.android.gms.ads.OnPaidEventListener;
+import com.google.android.gms.ads.ResponseInfo;
+import com.google.android.gms.ads.interstitial.InterstitialAd;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.material.snackbar.Snackbar;
 import com.google.firebase.database.DataSnapshot;
@@ -158,9 +158,6 @@ import com.yearlater.inboxmessenger.views.AttachmentView;
 import com.yearlater.inboxmessenger.views.ChatEditText;
 import com.yearlater.inboxmessenger.views.dialogs.DeleteDialog;
 import com.yearlater.inboxmessenger.views.dialogs.DialogChoseNumber;
-import com.zhihu.matisse.Matisse;
-import com.zhihu.matisse.MimeType;
-import com.zhihu.matisse.engine.impl.GlideEngine;
 
 import org.greenrobot.eventbus.EventBus;
 import org.greenrobot.eventbus.Subscribe;
@@ -175,7 +172,6 @@ import java.util.List;
 import java.util.Map;
 
 import ca.barrenechea.widget.recyclerview.decoration.StickyHeaderDecoration;
-import de.hdodenhof.circleimageview.CircleImageView;
 import io.reactivex.disposables.Disposable;
 import io.realm.OrderedCollectionChangeSet;
 import io.realm.OrderedRealmCollectionChangeListener;
@@ -197,29 +193,62 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     public static final int PICK_CONTACT_REQUEST = 5491;
     public static final int PICK_NUMBERS_FOR_CONTACT_REQUEST = 5517;
     public static final int PICK_LOCATION_REQUEST = 7125;
-
-    public static int MAX_FILE_SIZE = 40000;
     public static final int MAX_SELECTABLE = 9;
-
-
-    //update last seen every 120000 Seconds (2 Minutes)
-    private static final int UPDATE_PRESENCE_DELAY = 120000;
-    Handler updatePresenceHandler = new Handler();
-
     //start voice record after 575ms until the sound effect finishes
     public static final int RECORD_START_AUDIO_LENGTH = 575;
-
+    //update last seen every 120000 Seconds (2 Minutes)
+    private static final int UPDATE_PRESENCE_DELAY = 120000;
+    public static int MAX_FILE_SIZE = 40000;
+    private final GroupManager groupManager = new GroupManager();
     //value to indicate whether it's in action mode or not
     public boolean isInActionMode = false;
+    public ChatEditText etMessage;
+    Handler updatePresenceHandler = new Handler();
+    View rootView;
+    EmojiPopup emojiPopup;
+    Menu currentMenu;
+    RealmResults<Message> messageList;
+    RealmResults<Message> observableList;
+    OrderedRealmCollectionChangeListener<RealmResults<Message>> changeListener;
+    MessagingAdapter adapter;
+    LinearLayoutManager linearLayoutManager;
+    //to indicates the message from duplicate(onInsertions or onChange RealmListener)
+    String previousMessageIdForScroll = "";
+    String oldIdAudioPlayer = "";
+    String timerStr = "";
+    String presenceStat = "";
+    String receiverUid;
+    GroupTyping groupTyping;
+    boolean isLastSeenInitiated = false;
+    boolean isTypedBefore = false;
+    boolean wasInTypingMode = false;
+    boolean typingStarted = false;
+    boolean isGroup = false;
+    boolean isBroadcast = false;
+    int currentHeadsetState = -1;
+    int oldPosAudioPlayer = 0;
+    int searchIndex = 0;
+    int unreadCount = 0;
+    float initialToolbarTranslationY = 0;
+    long presenceTimestamp = 0;
+    User user;
+    Chat chat;
+    Recorder recorder;
+    File recordFile;
+    HeadsetReceiver headsetReceiver;
+    IntentFilter headsetIntentFilter;
+    ValueAnimator colorAnim;
+    ValueEventListener messageStatListener, voiceMessageStatListener, typingStatListener, presenceStatListener;
+    FireListener fireListener;
+    FireManager fireManager;
+    PerformCall performCall;
     //value to indicate whether it's in search mode or not
     private boolean isInSearchMode = false;
-
     private RecyclerView recyclerView;
     private ImageView imgAttachment, cameraBtn, emojiBtn, imgOnline;
     private ImageButton btnToolbarBack, upArrowSearchToolbar, downArrowSearchToolbar;
     private HidelyImageButton btnScroll;
     private LinearLayout typingLayout;
-    public ChatEditText etMessage;
     private RecordView recordView;
     private AnimButton recordButton;
     private androidx.constraintlayout.widget.Group searchGroup;
@@ -232,7 +261,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     private ConstraintLayout typingLayoutContainer, mainContainer;
     private ImageView bg;
     private LinearLayout imgAndBackContainer;
-
     //quoted message layout when replying
     private FrameLayout quotedMessageFrame;
     private View quotedColor;
@@ -240,74 +268,10 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     private EmojiTextView tvQuotedText;
     private ImageView quotedThumb;
     private ImageView btnCancelImage;
-
-
-    View rootView;
-
-    EmojiPopup emojiPopup;
-
-    Menu currentMenu;
-
-    RealmResults<Message> messageList;
-    RealmResults<Message> observableList;
-
-
-    OrderedRealmCollectionChangeListener<RealmResults<Message>> changeListener;
-
     private StickyHeaderDecoration decor;
-    MessagingAdapter adapter;
-    LinearLayoutManager linearLayoutManager;
-
-
-    //to indicates the message from duplicate(onInsertions or onChange RealmListener)
-    String previousMessageIdForScroll = "";
-    String oldIdAudioPlayer = "";
-    String timerStr = "";
-    String presenceStat = "";
-    String receiverUid;
     private Message currentQuotedMessage = null;
-
-    GroupTyping groupTyping;
-
-
-    boolean isLastSeenInitiated = false;
-    boolean isTypedBefore = false;
-    boolean wasInTypingMode = false;
-    boolean typingStarted = false;
-    boolean isGroup = false;
-    boolean isBroadcast = false;
-
     private boolean mIsDetailsActivityStarted;
     private Bundle mTmpReenterState;
-
-    int currentHeadsetState = -1;
-    int oldPosAudioPlayer = 0;
-    int searchIndex = 0;
-    int unreadCount = 0;
-    private int currentTypingState = TypingStat.NOT_TYPING;
-
-    float initialToolbarTranslationY = 0;
-
-    long presenceTimestamp = 0;
-
-    User user;
-    Chat chat;
-
-    Recorder recorder;
-    File recordFile;
-
-    HeadsetReceiver headsetReceiver;
-    IntentFilter headsetIntentFilter;
-
-    ValueAnimator colorAnim;
-
-    ValueEventListener messageStatListener, voiceMessageStatListener, typingStatListener, presenceStatListener;
-    FireListener fireListener;
-
-    FireManager fireManager;
-    PerformCall performCall;
-    private GroupManager groupManager = new GroupManager();
-
     private final SharedElementCallback mCallback = new SharedElementCallback() {
         @Override
         public void onMapSharedElements(List<String> names, Map<String, View> sharedElements) {
@@ -350,7 +314,23 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
             }
         }
     };
+    private int currentTypingState = TypingStat.NOT_TYPING;
+    private final Runnable updatePresenceRunnable = new Runnable() {
+        @Override
+        public void run() {
+            //if presence currentTypingState is not online then set last seen and update it every 2 Minutes
+            if (!presenceStat.equals("Online")) {
+                imgOnline.setVisibility(View.GONE);
+                if (presenceTimestamp != 0) {
+                    presenceStat = TimeHelper.getTimeAgo(presenceTimestamp);
 
+                    availableStatToolbar.setText(presenceStat);
+                    updateToolbarTvsVisibility(false);
+                }
+                updatePresenceHandler.postDelayed(this, UPDATE_PRESENCE_DELAY);
+            }
+        }
+    };
     private ChatViewModel viewModel;
     private MessageSwipeController messageSwipeController;
 
@@ -570,8 +550,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
             try {
                 File file = File.createTempFile("temp", ".gif");
                 boolean b = FileUtils.writeToFileFromContentUri(getContentResolver(), file, contentUri);
-                if (b)
-                    sendImage(file.getPath(), false);
+                if (b) sendImage(file.getPath(), false);
                 else {
                     Toast.makeText(ChatActivity.this, R.string.error, Toast.LENGTH_SHORT).show();
                 }
@@ -616,8 +595,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
             @Override
             public void onClick(View v) {
                 emojiPopup.dismiss();
-                if (attachmentView.isShowing())
-                    attachmentView.hide(imgAttachment);
+                if (attachmentView.isShowing()) attachmentView.hide(imgAttachment);
 
             }
         });
@@ -680,8 +658,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
                     if (lastVisibleItemPosition != messageList.size() - 1) {
                         //only show it when it is hidden
-                        if (!btnScroll.isShowing())
-                            btnScroll.show();
+                        if (!btnScroll.isShowing()) btnScroll.show();
 
                     } else {
                         btnScroll.hide();
@@ -814,8 +791,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         searchViewToolbar.setOnQueryTextFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View view, boolean b) {
-                if (b)
-                    KeyboardHelper.openSoftKeyboard(ChatActivity.this, view.findFocus());
+                if (b) KeyboardHelper.openSoftKeyboard(ChatActivity.this, view.findFocus());
             }
         });
 
@@ -836,8 +812,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         });
 
 
-        if (getResources().getBoolean(R.bool.is_interstitial_ad_enabled))
-            loadInterstitialAd();
+        if (getResources().getBoolean(R.bool.is_interstitial_ad_enabled)) loadInterstitialAd();
 
 
         btnCancelImage.setOnClickListener(new View.OnClickListener() {
@@ -853,8 +828,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         performCall = new PerformCall(this, fireManager, getDisposables());
 
         viewModel.getItemSelectedLiveData().observe(this, selectedMessages -> {
-            if (selectedMessages.isEmpty())
-                exitActionMode();
+            if (selectedMessages.isEmpty()) exitActionMode();
 
             else {
                 updateToolbarButtons(selectedMessages);
@@ -865,7 +839,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         });
     }
 
-
     //hide or show toolbar button in activity depending on conditions
     private void updateToolbarButtons(List<Message> selectedMessages) {
         if (AdapterHelper.shouldHideAllItems(selectedMessages)) {
@@ -874,29 +847,21 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
             hideForwardItem();
             hideReplyMenuItem();
         } else {
-            if (AdapterHelper.shouldEnableCopyItem(selectedMessages))
-                showCopyItem();
-            else
-                hideCopyItem();
+            if (AdapterHelper.shouldEnableCopyItem(selectedMessages)) showCopyItem();
+            else hideCopyItem();
 
-            if (AdapterHelper.shouldEnableForwardButton(selectedMessages))
-                showForwardItem();
-            else
-                hideForwardItem();
+            if (AdapterHelper.shouldEnableForwardButton(selectedMessages)) showForwardItem();
+            else hideForwardItem();
 
-            if (AdapterHelper.shouldEnableShareButton(selectedMessages))
-                showShareItem();
-            else
-                hideShareItem();
+            if (AdapterHelper.shouldEnableShareButton(selectedMessages)) showShareItem();
+            else hideShareItem();
 
             boolean isGroupActive = isGroupActive();
             if (AdapterHelper.shouldEnableReplyItem(selectedMessages, user.isGroupBool(), isGroupActive))
                 showReplyItem();
-            else
-                hideReplyMenuItem();
+            else hideReplyMenuItem();
         }
     }
-
 
     private boolean isGroupActive() {
         return user.getGroup() != null && user.getGroup().isActive();
@@ -911,8 +876,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     //set background image if user chooses another image than the default one
     private void setBackgroundImage() {
-        if (SharedPreferencesManager.getWallpaperPath().equals(""))
-            return;
+        if (SharedPreferencesManager.getWallpaperPath().equals("")) return;
 
         Bitmap bitmap;
         try {
@@ -926,7 +890,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         }
 
     }
-
 
     private void updateGroup() {
         getDisposables().add(groupManager.updateGroup(user.getUid(), null).subscribe());
@@ -958,16 +921,50 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     }
 
     private void loadInterstitialAd() {
-        final InterstitialAd interstitialAd = new InterstitialAd(this);
-        interstitialAd.setAdUnitId(getString(R.string.interstitial_ad_id));
-        interstitialAd.loadAd(new AdRequest.Builder().build());
-        interstitialAd.setAdListener(new AdListener() {
+        final InterstitialAd interstitialAd = new InterstitialAd() {
+            @Nullable
             @Override
-            public void onAdLoaded() {
-                super.onAdLoaded();
-                interstitialAd.show();
+            public FullScreenContentCallback getFullScreenContentCallback() {
+                return null;
             }
-        });
+
+            @Override
+            public void setFullScreenContentCallback(@Nullable FullScreenContentCallback fullScreenContentCallback) {
+
+            }
+
+            @Nullable
+            @Override
+            public OnPaidEventListener getOnPaidEventListener() {
+                return null;
+            }
+
+            @Override
+            public void setOnPaidEventListener(@Nullable OnPaidEventListener onPaidEventListener) {
+
+            }
+
+            @NonNull
+            @Override
+            public ResponseInfo getResponseInfo() {
+                return null;
+            }
+
+            @NonNull
+            @Override
+            public String getAdUnitId() {
+                return getString(R.string.interstitial_ad_id);
+            }
+
+            @Override
+            public void setImmersiveMode(boolean b) {
+
+            }
+
+            @Override
+            public void show(@NonNull Activity activity) {
+            }
+        };
     }
 
     @Override
@@ -1001,8 +998,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
             }
         }
 
-        if (!isBroadcast)
-            getUserPhoto();
+        if (!isBroadcast) getUserPhoto();
 
         //dismiss notification
         new NotificationHelper(this).dismissNotification(receiverUid, true);
@@ -1049,11 +1045,9 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         super.onDestroy();
     }
 
-
     private void getChat() {
         chat = RealmHelper.getInstance().getChat(receiverUid);
     }
-
 
     private void viewContact() {
         Intent intent = new Intent(ChatActivity.this, UserDetailsActivity.class);
@@ -1061,7 +1055,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         String transitionName = getResources().getString(R.string.profile_translation_name);
         startActivity(intent, ActivityOptionsCompat.makeSceneTransitionAnimation(this, userImgToolbarChatAct, transitionName).toBundle());
     }
-
 
     private void changeSendButtonState(boolean setTyping) {
         if (setTyping) {
@@ -1087,8 +1080,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         recyclerView.scrollToPosition(index);
         View view = this.getCurrentFocus();
         //hide keyboard
-        if (view != null)
-            KeyboardHelper.hideSoftKeyboard(this, view);
+        if (view != null) KeyboardHelper.hideSoftKeyboard(this, view);
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
@@ -1144,34 +1136,30 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         }
     }
 
-
     //update user photo thumb img
     private void getUserPhoto() {
         if (!NetworkHelper.isConnected(this)) return;
-        getDisposables().add(fireManager.checkAndDownloadUserThumbImg(user).subscribe(thumbImg -> {
+        getDisposables().add(FireManager.checkAndDownloadUserThumbImg(user).subscribe(thumbImg -> {
             float size = getResources().getDimension(R.dimen.profile_pic_size);
-            Glide.with(ChatActivity.this)
-                    .asBitmap()
-                    .override((int) size, (int) size)
-                    .load(user.getThumbImg())
-                    .into(new CustomTarget<Bitmap>() {
-                        @Override
-                        public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
-                            AdapterHelper.drawProfileImage(resource, userImgToolbarChatAct, ChatActivity.this);
-                        }
-                        @Override
-                        public void onLoadCleared(@Nullable Drawable placeholder) {
-                        }
-                        @Override
-                        public void onLoadFailed(@Nullable @org.jetbrains.annotations.Nullable Drawable errorDrawable) {
-                            super.onLoadFailed(errorDrawable);
-                           }
-                    });
+            Glide.with(ChatActivity.this).asBitmap().override((int) size, (int) size).load(user.getThumbImg()).into(new CustomTarget<Bitmap>() {
+                @Override
+                public void onResourceReady(@NonNull Bitmap resource, @Nullable Transition<? super Bitmap> transition) {
+                    AdapterHelper.drawProfileImage(resource, userImgToolbarChatAct, ChatActivity.this);
+                }
+
+                @Override
+                public void onLoadCleared(@Nullable Drawable placeholder) {
+                }
+
+                @Override
+                public void onLoadFailed(@Nullable @org.jetbrains.annotations.Nullable Drawable errorDrawable) {
+                    super.onLoadFailed(errorDrawable);
+                }
+            });
         }, throwable -> {
 
         }));
     }
-
 
     //transition effects
     @Override
@@ -1189,14 +1177,12 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         });
     }
 
-
     //listen for typing or recording status
     private void listenForTypingStat() {
         typingStatListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.getValue() == null)
-                    return;
+                if (dataSnapshot.getValue() == null) return;
 
                 currentTypingState = dataSnapshot.getValue(Integer.class);
 
@@ -1246,10 +1232,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
                 if (presenceStat.equals("")) {
                     availableStatToolbar.setVisibility(View.GONE);
                     imgOnline.setVisibility(View.GONE);
-                }
-
-                else
-                    availableStatToolbar.setVisibility(View.VISIBLE);
+                } else availableStatToolbar.setVisibility(View.VISIBLE);
             }
         }
 
@@ -1279,21 +1262,17 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     //add firebase Listeners
     private void addFireListeners() {
         if (!isGroup && !isBroadcast) {
-            DatabaseReference typingStatRef = FireConstants.mainRef.child("typingStat")
-                    .child(receiverUid).child(FireManager.getUid());
+            DatabaseReference typingStatRef = FireConstants.mainRef.child("typingStat").child(receiverUid).child(FireManager.getUid());
             fireListener.addListener(typingStatRef, typingStatListener);
             fireListener.addListener(FireConstants.presenceRef.child(receiverUid), presenceStatListener);
         }
     }
 
-
     //remove fire listeners to clean up resources and avoid memory leaks
     private void removeFireListeners() {
         fireListener.cleanup();
-        if (groupTyping != null)
-            groupTyping.cleanUp();
+        if (groupTyping != null) groupTyping.cleanUp();
     }
-
 
     //listen for friend status and see if he is online ,otherwise set last seen time
     private void listenForFriendStat() {
@@ -1314,8 +1293,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
                         availableStatToolbar.setText(R.string.online);
                         updateToolbarTvsVisibility(false);
                         presenceStat = "Online";
-                    }
-                    else  imgOnline.setVisibility(View.INVISIBLE);
+                    } else imgOnline.setVisibility(View.INVISIBLE);
                 } else {
                     imgOnline.setVisibility(View.INVISIBLE);
                     long timestamp = dataSnapshot.getValue(Long.class);
@@ -1356,7 +1334,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         fireListener.addListener(ref, messageStatListener);
     }
 
-
     private void addVoiceMessageStatListener(final String messageId) {
         if (isBroadcast) return;
         DatabaseReference ref = FireConstants.voiceMessageStat.child(receiverUid).child(messageId);
@@ -1368,8 +1345,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         messageStatListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.getValue() == null)
-                    return;
+                if (dataSnapshot.getValue() == null) return;
 
 
                 int val = dataSnapshot.getValue(Integer.class);
@@ -1394,8 +1370,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         voiceMessageStatListener = new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.getValue() == null)
-                    return;
+                if (dataSnapshot.getValue() == null) return;
 
 
                 String messageId = dataSnapshot.getKey();
@@ -1411,7 +1386,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
             }
         };
     }
-
 
     //this is called **whenever** a CHANGE occurs to the "observableList" ,insertion,change,delete,etc...
     private void observeMessagesChanges() {
@@ -1454,7 +1428,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
                         new Handler().postDelayed(new Runnable() {
                             @Override
                             public void run() {
-                                ServiceHelper.startUpdateMessageStatRequest(ChatActivity.this, message.getMessageId(), fireManager.getUid(), message.getChatId(), MessageStat.READ);
+                                ServiceHelper.startUpdateMessageStatRequest(ChatActivity.this, message.getMessageId(), FireManager.getUid(), message.getChatId(), MessageStat.READ);
                             }
                         }, 100);
 
@@ -1468,8 +1442,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     //scroll to last OR update the unread count
     private void updateChat(Message message) {
 
-        if (message.getType() == MessageType.GROUP_EVENT)
-            return;
+        if (message.getType() == MessageType.GROUP_EVENT) return;
 
         //if the message was send by the user then scroll to last
         if (message.getFromId().equals(FireManager.getUid()) && message.getMessageStat() == MessageStat.PENDING) {
@@ -1480,8 +1453,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
                 //get index from the message
                 int i = messageList.indexOf(message);
                 //if it's -1 (not exists) return
-                if (i == -1)
-                    return;
+                if (i == -1) return;
 
 
                 //get last visible item on screen
@@ -1498,7 +1470,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
                     //and for that we want to show the unreadCount badge with the count
                     if (lastVisibleItemPosition != i && !message.getMessageId().equals(previousMessageIdForScroll) && message.getType() != MessageType.GROUP_EVENT) {
                         unreadCount++;
-                        countUnreadBadge.setText(unreadCount + "");
+                        countUnreadBadge.setText(String.valueOf(unreadCount));
                         countUnreadBadge.setVisibility(View.VISIBLE);
                         btnScroll.show();
                     }
@@ -1508,12 +1480,10 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         }
     }
 
-
     //stop record
     private void stopRecord(boolean isCancelled, long recordTime) {
         try {
-            if (recorder != null)
-                recorder.stopRecording();
+            if (recorder != null) recorder.stopRecording();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -1535,17 +1505,15 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     }
 
-
     //start recording voice message
     private void handleRecord() {
         recordFile = DirManager.generateFile(MessageType.SENT_VOICE_MESSAGE);
-        recorder = OmRecorder.wav(
-                new PullTransport.Default(RecorderSettings.getMic(), new PullTransport.OnAudioChunkPulledListener() {
-                    @Override
-                    public void onAudioChunkPulled(AudioChunk audioChunk) {
+        recorder = OmRecorder.wav(new PullTransport.Default(RecorderSettings.getMic(), new PullTransport.OnAudioChunkPulledListener() {
+            @Override
+            public void onAudioChunkPulled(AudioChunk audioChunk) {
 
-                    }
-                }), recordFile);
+            }
+        }), recordFile);
 
 
         //start record when the record sound "BEEP" finishes
@@ -1559,7 +1527,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     }
 
-
     private void scrollToLast() {
         if (messageList == null) return;
         if (messageList.size() - 1 <= 0) return;
@@ -1570,13 +1537,10 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         btnScroll.hide();
     }
 
-
     private void setAdapter() {
 
 
-        adapter = new MessagingAdapter(messageList, true, this, this,
-                user, SharedPreferencesManager.getThumbImg(),
-                viewModel.getItemSelectedLiveData(), viewModel.getProgressMapLiveData(), viewModel.getAudibleState());
+        adapter = new MessagingAdapter(messageList, true, this, this, user, SharedPreferencesManager.getThumbImg(), viewModel.getItemSelectedLiveData(), viewModel.getProgressMapLiveData(), viewModel.getAudibleState());
 
 
         decor = new StickyHeaderDecoration(adapter);
@@ -1618,7 +1582,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     }
 
-
     private void enableSwipeToDeleteAndUndo() {
 
         messageSwipeController = new MessageSwipeController(this, isGroupActive(), new SwipeControllerActions() {
@@ -1647,10 +1610,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         typingLayout = findViewById(R.id.typing_layout);
 
 
-        emojiPopup = EmojiPopup.Builder.fromRootView(rootView)
-                .setOnEmojiPopupShownListener(() -> emojiBtn.setImageResource(R.drawable.ic_baseline_keyboard_24))
-                .setOnEmojiPopupDismissListener(() -> emojiBtn.setImageResource(R.drawable.ic_insert_emoticon_black))
-                .build(etMessage);
+        emojiPopup = EmojiPopup.Builder.fromRootView(rootView).setOnEmojiPopupShownListener(() -> emojiBtn.setImageResource(R.drawable.ic_baseline_keyboard_24)).setOnEmojiPopupDismissListener(() -> emojiBtn.setImageResource(R.drawable.ic_insert_emoticon_black)).build(etMessage);
 
 
         toolbar = findViewById(R.id.toolbar);
@@ -1669,7 +1629,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         tvCantSendMessages = findViewById(R.id.tv_cant_send_messages);
         typingLayoutContainer = findViewById(R.id.typing_layout_container);
         mainContainer = findViewById(R.id.content_chat);
-        bg=findViewById(R.id.imageView_bg);
+        bg = findViewById(R.id.imageView_bg);
         searchGroup = findViewById(R.id.search_layout);
 
         quotedMessageFrame = findViewById(R.id.quoted_message_frame);
@@ -1717,7 +1677,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         }
     }
 
-
     private void setUserInfoInToolbar() {
         if (user.getThumbImg() != null)
             Glide.with(ChatActivity.this).load(user.getThumbImg()).into(userImgToolbarChatAct);
@@ -1746,15 +1705,13 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         for (User user : users) {
             if (user.getUid().equals(FireManager.getUid())) {
                 names += getResources().getString(R.string.you) + SEPARATOR;
-            } else
-                names += user.getProperUserName() + SEPARATOR;
+            } else names += user.getProperUserName() + SEPARATOR;
         }
         String userNames = StringUtils.removeExtraSeparators(names, SEPARATOR);
         availableStatToolbar.setText(userNames);
 
 
     }
-
 
     private void pickImages() {
 //        Matisse.from(ChatActivity.this)
@@ -1773,10 +1730,9 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 //        startActivityForResult(Intent.createChooser(intent,"Select Video"),PICK_GALLERY_REQUEST);
 
 
-        Intent pickIntent = new Intent(
-                Intent.ACTION_PICK);
+        Intent pickIntent = new Intent(Intent.ACTION_PICK);
         pickIntent.setData(MediaStore.Images.Media.INTERNAL_CONTENT_URI);
-        pickIntent.putExtra(Intent.EXTRA_MIME_TYPES, new String[] {"image/*", "video/*"});
+        pickIntent.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"image/*", "video/*"});
 //        pickIntent.setType("image/* video/*");
 
 
@@ -1811,20 +1767,11 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     }
 
     private void pickContact() {
-        new MultiContactPicker.Builder(ChatActivity.this)
-                .handleColor(ContextCompat.getColor(ChatActivity.this, R.color.colorPrimary))
-                .bubbleColor(ContextCompat.getColor(ChatActivity.this, R.color.colorPrimary))
-                .showPickerForResult(PICK_CONTACT_REQUEST);
+        new MultiContactPicker.Builder(ChatActivity.this).handleColor(ContextCompat.getColor(ChatActivity.this, R.color.colorPrimary)).bubbleColor(ContextCompat.getColor(ChatActivity.this, R.color.colorPrimary)).showPickerForResult(PICK_CONTACT_REQUEST);
     }
 
     private void pickFile() {
-        StorageChooser chooser = new StorageChooser.Builder()
-                .withActivity(ChatActivity.this)
-                .withFragmentManager(getFragmentManager())
-                .allowCustomPath(true)
-                .setType(StorageChooser.FILE_PICKER)
-                .disableMultiSelect()
-                .build();
+        StorageChooser chooser = new StorageChooser.Builder().withActivity(ChatActivity.this).withFragmentManager(getFragmentManager()).allowCustomPath(true).setType(StorageChooser.FILE_PICKER).disableMultiSelect().build();
 
 
         chooser.show();
@@ -1851,7 +1798,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
 
     }
-
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -1909,8 +1855,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         if (isGroup || isBroadcast) {
             menu.findItem(R.id.block_contact).setVisible(false);
             menu.findItem(R.id.add_to_contacts).setVisible(false);
-            if (isGroup)
-                menu.findItem(R.id.view_contact_menu_item).setTitle(R.string.group_info);
+            if (isGroup) menu.findItem(R.id.view_contact_menu_item).setTitle(R.string.group_info);
             else menu.findItem(R.id.view_contact_menu_item).setTitle(R.string.broadcast_list_info);
 
         }
@@ -1951,8 +1896,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
                     if (user.getGroup() != null && user.getGroup().isActive()) {
                         performCall.performConferenceCall(true, user.getUid());
                     }
-                } else
-                    performCall.performCall(true, receiverUid);
+                } else performCall.performCall(true, receiverUid);
                 break;
 
             case R.id.voice_call_item:
@@ -1960,8 +1904,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
                     if (user.getGroup() != null && user.getGroup().isActive()) {
                         performCall.performConferenceCall(false, user.getUid());
                     }
-                } else
-                    performCall.performCall(false, receiverUid);
+                } else performCall.performCall(false, receiverUid);
                 break;
 
             case R.id.view_contact_menu_item:
@@ -2018,7 +1961,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     }
 
     private void replyItemClicked() {
-        Log.e("reply item clicked","reply");
+        Log.e("reply item clicked", "reply");
         Message selectedMessage = viewModel.getSelectedItems().get(0);
         if (selectedMessage == null) return;
         String author;
@@ -2042,25 +1985,21 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         builderConfirm.setMessage(getString(R.string.report_block_decription));
         builderConfirm.setCancelable(true);
 
-        builderConfirm.setPositiveButton(
-                getString(R.string.yes),
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        //to do: Report functionality should be added to later versions
-                        blockUserClicked();
-                        RealmHelper.getInstance().deleteChat(user.getUid());
-                        dialog.cancel();
-                        onBackPressed();
-                    }
-                });
+        builderConfirm.setPositiveButton(getString(R.string.yes), new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                //to do: Report functionality should be added to later versions
+                blockUserClicked();
+                RealmHelper.getInstance().deleteChat(user.getUid());
+                dialog.cancel();
+                onBackPressed();
+            }
+        });
 
-        builderConfirm.setNegativeButton(
-                getString(R.string.no),
-                new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int id) {
-                        dialog.cancel();
-                    }
-                });
+        builderConfirm.setNegativeButton(getString(R.string.no), new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                dialog.cancel();
+            }
+        });
 
         AlertDialog confirmDialog = builderConfirm.create();
         confirmDialog.show();
@@ -2085,7 +2024,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         currentQuotedMessage = selectedMessage;
     }
 
-
     private void clearChat() {
         DeleteDialog deleteDialog = new DeleteDialog(this, true);
         deleteDialog.setMTitle(getResources().getString(R.string.confirmation));
@@ -2103,7 +2041,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         deleteDialog.show();
     }
 
-
     //add a contact to Phonebook
     private void addToContacts() {
         Intent addContactIntent = IntentUtils.getAddContactIntent(user.getPhone());
@@ -2112,18 +2049,17 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     private void blockUserClicked() {
         if (NetworkHelper.isConnected(this)) {
-            final ProgressDialog progressDialog = new ProgressDialog(this,R.style.AlertDialogStyle);
+            final ProgressDialog progressDialog = new ProgressDialog(this, R.style.AlertDialogStyle);
             progressDialog.setTitle(getString(R.string.loading));
             progressDialog.show();
 
             //unblock user
             Boolean setBlocked = !user.isBlocked();
-            getDisposables().add(fireManager.setUserBlocked(fireManager.getUid(), receiverUid, setBlocked).subscribe(() -> {
-                        progressDialog.dismiss();
-                        RealmHelper.getInstance().setUserBlocked(user, setBlocked);
-                        updateBlockMenuItemTitle(currentMenu);
-                    }, throwable -> progressDialog.dismiss())
-            );
+            getDisposables().add(fireManager.setUserBlocked(FireManager.getUid(), receiverUid, setBlocked).subscribe(() -> {
+                progressDialog.dismiss();
+                RealmHelper.getInstance().setUserBlocked(user, setBlocked);
+                updateBlockMenuItemTitle(currentMenu);
+            }, throwable -> progressDialog.dismiss()));
 
         } else {
             Snackbar.make(findViewById(android.R.id.content), R.string.no_internet_connection, Snackbar.LENGTH_SHORT).show();
@@ -2135,15 +2071,13 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     }
 
     private void searchItemClicked() {
-        if (isInActionMode)
-            exitActionMode();
+        if (isInActionMode) exitActionMode();
 
         isInSearchMode = true;
         toolbar.getMenu().clear();
         searchGroup.setVisibility(View.VISIBLE);
         hideOrShowUserInfo(true);
-        if (searchViewToolbar.isIconified())
-            searchViewToolbar.onActionViewExpanded();
+        if (searchViewToolbar.isIconified()) searchViewToolbar.onActionViewExpanded();
 
         searchViewToolbar.requestFocus();
     }
@@ -2199,8 +2133,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
                                 if (message.getDownloadUploadStat() == DownloadUploadStat.LOADING) {
                                     if (MessageType.isSentType(message.getType())) {
                                         DownloadManager.cancelUpload(message.getMessageId());
-                                    } else
-                                        DownloadManager.cancelDownload(message.getMessageId());
+                                    } else DownloadManager.cancelDownload(message.getMessageId());
                                 }
 
 
@@ -2216,24 +2149,23 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
                         case 2:
                             for (final Message message : selectedItemsForActionMode) {
                                 getDisposables().add(fireManager.getServerTime().subscribe(timestamp -> {
-                                            if (TimeHelper.isMessageTimePassed(timestamp, Long.parseLong(message.getTimestamp()))) {
-                                                Toast.makeText(ChatActivity.this, R.string.error, Toast.LENGTH_SHORT).show();
-                                            } else {
-                                                FireConstants.getDeleteMessageRequestsRef(message.getMessageId(), user.isGroupBool(), user.isBroadcastBool(), user.getUid()).setValue(true).addOnSuccessListener(new OnSuccessListener<Void>() {
-                                                    @Override
-                                                    public void onSuccess(Void aVoid) {
-                                                        if (message.getDownloadUploadStat() == DownloadUploadStat.LOADING) {
-                                                            if (MessageType.isSentType(message.getType())) {
-                                                                DownloadManager.cancelUpload(message.getMessageId());
-                                                            } else
-                                                                DownloadManager.cancelDownload(message.getMessageId());
-                                                        }
-                                                        RealmHelper.getInstance().setMessageDeleted(message.getMessageId());
-                                                    }
-                                                });
+                                    if (TimeHelper.isMessageTimePassed(timestamp, Long.parseLong(message.getTimestamp()))) {
+                                        Toast.makeText(ChatActivity.this, R.string.error, Toast.LENGTH_SHORT).show();
+                                    } else {
+                                        FireConstants.getDeleteMessageRequestsRef(message.getMessageId(), user.isGroupBool(), user.isBroadcastBool(), user.getUid()).setValue(true).addOnSuccessListener(new OnSuccessListener<Void>() {
+                                            @Override
+                                            public void onSuccess(Void aVoid) {
+                                                if (message.getDownloadUploadStat() == DownloadUploadStat.LOADING) {
+                                                    if (MessageType.isSentType(message.getType())) {
+                                                        DownloadManager.cancelUpload(message.getMessageId());
+                                                    } else
+                                                        DownloadManager.cancelDownload(message.getMessageId());
+                                                }
+                                                RealmHelper.getInstance().setMessageDeleted(message.getMessageId());
                                             }
-                                        }, error -> Toast.makeText(ChatActivity.this, R.string.error, Toast.LENGTH_SHORT).show())
-                                );
+                                        });
+                                    }
+                                }, error -> Toast.makeText(ChatActivity.this, R.string.error, Toast.LENGTH_SHORT).show()));
 
                             }
                             exitActionMode();
@@ -2256,8 +2188,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
                         if (message.getDownloadUploadStat() == DownloadUploadStat.LOADING) {
                             if (MessageType.isSentType(message.getType())) {
                                 DownloadManager.cancelUpload(message.getMessageId());
-                            } else
-                                DownloadManager.cancelDownload(message.getMessageId());
+                            } else DownloadManager.cancelDownload(message.getMessageId());
                         }
 
                         RealmHelper.getInstance().deleteMessageFromRealm(message.getChatId(), message.getMessageId(), isDeleteChecked);
@@ -2274,7 +2205,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     }
 
-
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -2288,23 +2218,22 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
                 int count = data.getClipData().getItemCount();
                 Log.e("hello", String.valueOf(count));
-                for (int i=0; i<count; i++) {
+                for (int i = 0; i < count; i++) {
                     Uri imageUri = data.getClipData().getItemAt(i).getUri();
                     mPaths.add(getPath(imageUri));
-                    Log.e("hello",getPath(imageUri));
+                    Log.e("hello", getPath(imageUri));
 
                 }
-            }
-            else if (data.getData() != null) {
+            } else if (data.getData() != null) {
                 Uri imgUri = data.getData();
                 getPath(imgUri);
                 mPaths.add(getPath(imgUri));
             }
 
-            if (mPaths.get(0).contains("video")  || mPaths.get(0).contains(".3gp") || mPaths.get(0).contains(".mp4") || mPaths.get(0).contains(".mkv")) {
+            if (mPaths.get(0).contains("video") || mPaths.get(0).contains(".3gp") || mPaths.get(0).contains(".mp4") || mPaths.get(0).contains(".mkv")) {
 
                 sendTheVideo(mPaths);
-                Log.e("video working","working");
+                Log.e("video working", "working");
 
             } else {
                 sendImage(mPaths);
@@ -2339,8 +2268,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
             String[] audioArray = RealPathUtil.getAudioPath(this, uri);
             if (audioArray == null)
                 Toast.makeText(this, R.string.could_not_get_audio_file, Toast.LENGTH_SHORT).show();
-            else
-                sendAudio(audioArray[0], audioArray[1]);
+            else sendAudio(audioArray[0], audioArray[1]);
 
         } else if (requestCode == CAMERA_REQUEST && resultCode != ResultCodes.CAMERA_ERROR_STATE) {
 
@@ -2384,48 +2312,47 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     }
 
-        public List<String> getmultiplevideopath(Intent data) {
-            String[] filePathColumn = {MediaStore.Images.Media.DATA};
-            ArrayList<String> imagesEncodedList = new ArrayList<String>();
-            if (data.getData() != null) {
+    public List<String> getmultiplevideopath(Intent data) {
+        String[] filePathColumn = {MediaStore.Images.Media.DATA};
+        ArrayList<String> imagesEncodedList = new ArrayList<String>();
+        if (data.getData() != null) {
 
-                Uri mImageUri = data.getData();
+            Uri mImageUri = data.getData();
 
-                // Get the cursor
-                Cursor cursor = getContentResolver().query(mImageUri,
-                        filePathColumn, null, null, null);
-                // Move to first row
-                cursor.moveToFirst();
+            // Get the cursor
+            Cursor cursor = getContentResolver().query(mImageUri, filePathColumn, null, null, null);
+            // Move to first row
+            cursor.moveToFirst();
 
-                int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-              String  imageEncoded = cursor.getString(columnIndex);
-                cursor.close();
+            int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+            String imageEncoded = cursor.getString(columnIndex);
+            cursor.close();
 
-            } else {
-                if (data.getClipData() != null) {
-                    ClipData mClipData = data.getClipData();
-                    ArrayList<Uri> mArrayUri = new ArrayList<Uri>();
-                    for (int i = 0; i < mClipData.getItemCount(); i++) {
+        } else {
+            if (data.getClipData() != null) {
+                ClipData mClipData = data.getClipData();
+                ArrayList<Uri> mArrayUri = new ArrayList<Uri>();
+                for (int i = 0; i < mClipData.getItemCount(); i++) {
 
-                        ClipData.Item item = mClipData.getItemAt(i);
-                        Uri uri = item.getUri();
-                        mArrayUri.add(uri);
-                        // Get the cursor
-                        Cursor cursor = getContentResolver().query(uri, filePathColumn, null, null, null);
-                        // Move to first row
-                        cursor.moveToFirst();
+                    ClipData.Item item = mClipData.getItemAt(i);
+                    Uri uri = item.getUri();
+                    mArrayUri.add(uri);
+                    // Get the cursor
+                    Cursor cursor = getContentResolver().query(uri, filePathColumn, null, null, null);
+                    // Move to first row
+                    cursor.moveToFirst();
 
-                        int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
-                     String   imageEncoded = cursor.getString(columnIndex);
-                        imagesEncodedList.add(imageEncoded);
-                        cursor.close();
+                    int columnIndex = cursor.getColumnIndex(filePathColumn[0]);
+                    String imageEncoded = cursor.getString(columnIndex);
+                    imagesEncodedList.add(imageEncoded);
+                    cursor.close();
 
-                    }
-                    Log.v("LOG_TAG", "Selected Images" + mArrayUri.size());
                 }
+                Log.v("LOG_TAG", "Selected Images" + mArrayUri.size());
             }
-            return imagesEncodedList;
         }
+        return imagesEncodedList;
+    }
 
     private void sendLocation(Place place) {
         Message message = new MessageCreator.Builder(user, MessageType.SENT_LOCATION).quotedMessage(getQuotedMessage()).place(place).build();
@@ -2449,7 +2376,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     }
 
-
     private void sendVoiceMessage(String path, String duration) {
         Message message = new MessageCreator.Builder(user, MessageType.SENT_VOICE_MESSAGE).quotedMessage(getQuotedMessage()).path(path).duration(duration).build();
         //addVoiceMessageStatListener to indicates when the recipient listened to this VoiceMessage
@@ -2458,7 +2384,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         hideReplyLayout();
 
     }
-
 
     private void sendTheVideo(String path) {
         Message message = new MessageCreator.Builder(user, MessageType.SENT_VIDEO).quotedMessage(getQuotedMessage()).path(path).context(this).build();
@@ -2497,8 +2422,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     //send text message
     private void sendMessage(String text) {
 
-        if (text.trim().isEmpty())
-            return;
+        if (text.trim().isEmpty()) return;
 
         int length = text.getBytes().length;
         if (length > FireConstants.MAX_SIZE_STRING) {
@@ -2523,7 +2447,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         hideReplyLayout();
     }
 
-
     //send multiple images
     private void sendImage(List<String> pathList) {
         for (String imagePath : pathList) {
@@ -2534,7 +2457,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         hideReplyLayout();
 
     }
-
 
     private void sendFile(final String filePath) {
         Message message = new MessageCreator.Builder(user, MessageType.SENT_FILE).quotedMessage(getQuotedMessage()).path(filePath).build();
@@ -2567,16 +2489,12 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     }
 
-
     //this is called from adapter when the user is clicked on "X" Button
     //to cancel  upload or download process
     public void cancelDownloadOrUpload(Message message) {
-        if (MessageType.isSentType(message.getType()))
-            DownloadManager.cancelUpload(message);
-        else
-            DownloadManager.cancelDownload(message);
+        if (MessageType.isSentType(message.getType())) DownloadManager.cancelUpload(message);
+        else DownloadManager.cancelDownload(message);
     }
-
 
     //this is called from adapter when user cancelled
     //the download process and want to re-download it
@@ -2592,12 +2510,10 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         ServiceHelper.startNetworkRequest(this, message.getMessageId(), message.getChatId());
     }
 
-
     private void loadMessagesList() {
         messageList = RealmHelper.getInstance().getMessagesInChat(receiverUid);
         observableList = RealmHelper.getInstance().getObservableList(receiverUid);
     }
-
 
     //this is called when the user attached or de-attached Headphones to the Device
     //therefore we want to stop listening for Earpiece sensor in Audio Service when it's attached
@@ -2608,15 +2524,12 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     }
 
     private void headsetStateChanged() {
-        if (currentHeadsetState != -1)
-            ServiceHelper.headsetStateChanged(this, currentHeadsetState);
+        if (currentHeadsetState != -1) ServiceHelper.headsetStateChanged(this, currentHeadsetState);
     }
-
 
     @Subscribe(threadMode = ThreadMode.MAIN)
     public void groupActiveStateChanged(GroupActiveStateChanged event) {
-        if (!event.getGroupId().equals(user.getUid()))
-            return;
+        if (!event.getGroupId().equals(user.getUid())) return;
 
         messageSwipeController.setGroupActive(event.isActive());
 
@@ -2632,7 +2545,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
             //check for new image and load it
             getUserPhoto();
             Group group = user.getGroup();
-            if (group == null)return;
+            if (group == null) return;
             if (group.isActive()) {
                 hideOrShowTypingLayout(true);
             } else {
@@ -2641,7 +2554,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
             }
 
             if (group.isOnlyAdminsCanPost()) {
-                if (!fireManager.isAdmin(group.getAdminsUids())) {
+                if (!FireManager.isAdmin(group.getAdminsUids())) {
                     hideOrShowTypingLayout(false);
                     tvCantSendMessages.setText(R.string.only_admins_can_post);
                 } else {
@@ -2666,8 +2579,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     public void onActionModeStarted() {
         //exit search and remove search from toolbar
         // if isInSearchMode
-        if (isInSearchMode)
-            exitSearchMode();
+        if (isInSearchMode) exitSearchMode();
 
         //if it's not in action mode before
         //remove old menu items from toolbar
@@ -2685,11 +2597,9 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         tvCounterAction.setVisibility(View.VISIBLE);
     }
 
-
     public void updateActionModeItemsCount(int itemsCount) {
-        tvCounterAction.setText(itemsCount + "");
+        tvCounterAction.setText(String.valueOf(itemsCount));
     }
-
 
     //hide or show the views in toolbar, userImg,userName,typing and available
     private void hideOrShowUserInfo(boolean hide) {
@@ -2704,14 +2614,11 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     //when user click the back button
     @Override
     public void onBackPressed() {
-        if (isInActionMode)
-            exitActionMode();
-        else if (isInSearchMode)
-            exitSearchMode();
+        if (isInActionMode) exitActionMode();
+        else if (isInSearchMode) exitSearchMode();
         else if (attachmentView.isShowing()) {
             attachmentView.hide(imgAttachment);
-        } else
-            super.onBackPressed();
+        } else super.onBackPressed();
     }
 
     public void exitActionMode() {
@@ -2741,20 +2648,16 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     public void hideForwardItem() {
         MenuItem menuItem = toolbar.getMenu().findItem(R.id.menu_item_forward);
-        if (menuItem != null)
-            toolbar.getMenu().findItem(R.id.menu_item_forward).setVisible(false);
+        if (menuItem != null) toolbar.getMenu().findItem(R.id.menu_item_forward).setVisible(false);
     }
 
     public void showForwardItem() {
         MenuItem menuItem = toolbar.getMenu().findItem(R.id.menu_item_forward);
-        if (menuItem != null)
-            toolbar.getMenu().findItem(R.id.menu_item_forward).setVisible(true);
+        if (menuItem != null) toolbar.getMenu().findItem(R.id.menu_item_forward).setVisible(true);
     }
 
-
     //this is called from adapter when the user clicks on Play Button on Voice/Audio Message
-    public void playAudio(final String id, final String url, final int pos,
-                          final int progress) {
+    public void playAudio(final String id, final String url, final int pos, final int progress) {
 
         //start audio service and play audio
         ServiceHelper.playAudio(this, id, url, pos, progress);
@@ -2764,15 +2667,12 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
 
         //update the received voice message when the user listens to it
-        if (message != null && !message.isGroup() && message.isVoiceMessage()
-                && !message.getFromId().equals(FireManager.getUid())
-                && !message.isVoiceMessageSeen()) { //check if it's already listened or not
-            ServiceHelper.startUpdateVoiceMessageStatRequest(this, message.getMessageId(), message.getChatId(), fireManager.getUid());
+        if (message != null && !message.isGroup() && message.isVoiceMessage() && !message.getFromId().equals(FireManager.getUid()) && !message.isVoiceMessageSeen()) { //check if it's already listened or not
+            ServiceHelper.startUpdateVoiceMessageStatRequest(this, message.getMessageId(), message.getChatId(), FireManager.getUid());
         }
 
 
     }
-
 
     //update the network process progress
     @Subscribe
@@ -2782,7 +2682,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         viewModel.networkProgressChanged(messageId, progress);
     }
 
-
     //on finish network job
     @Subscribe
     public void onNetworkJobComplete(OnNetworkComplete data) {
@@ -2791,7 +2690,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
 
     }
-
 
     //this is for setting the max duration for the audio message
     //to make seekbar works properly
@@ -2805,7 +2703,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
 
     }
-
 
     //when starts play
     @Subscribe
@@ -2829,7 +2726,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
 
     }
-
 
     @Subscribe
     public void onAudioPause(AudioServiceCallbacksEvent.onPause event) {
@@ -2859,7 +2755,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     }
 
-
     @Subscribe
     public void onAudioProgressUpdate(AudioServiceCallbacksEvent.onProgressUpdate event) {
         String id = event.getId();
@@ -2878,11 +2773,9 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         Toast.makeText(this, R.string.error_playing_this, Toast.LENGTH_SHORT).show();
     }
 
-
     public void seekTo(String id, int progress) {
         ServiceHelper.seekTo(this, id, progress);
     }
-
 
     public void onFileClick(Message message) {
         try {
@@ -2968,7 +2861,6 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     }
 
-
     private void startChatActivityWithDifferentUser(User user) {
         Intent intent = new Intent(ChatActivity.this, ChatActivity.class);
         intent.putExtra(IntentUtils.UID, user.getUid());
@@ -2979,16 +2871,13 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     public void showCopyItem() {
         MenuItem menuItem = toolbar.getMenu().findItem(R.id.menu_item_copy);
-        if (menuItem != null)
-            toolbar.getMenu().findItem(R.id.menu_item_copy).setVisible(true);
+        if (menuItem != null) toolbar.getMenu().findItem(R.id.menu_item_copy).setVisible(true);
     }
 
     public void hideCopyItem() {
         MenuItem menuItem = toolbar.getMenu().findItem(R.id.menu_item_copy);
-        if (menuItem != null)
-            toolbar.getMenu().findItem(R.id.menu_item_copy).setVisible(false);
+        if (menuItem != null) toolbar.getMenu().findItem(R.id.menu_item_copy).setVisible(false);
     }
-
 
     private void startUpdatePresenceTask() {
         if (!isGroup && !isBroadcast)
@@ -2999,49 +2888,26 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         updatePresenceHandler.removeCallbacks(updatePresenceRunnable);
     }
 
-
-    private Runnable updatePresenceRunnable = new Runnable() {
-        @Override
-        public void run() {
-            //if presence currentTypingState is not online then set last seen and update it every 2 Minutes
-            if (!presenceStat.equals("Online")) {
-                imgOnline.setVisibility(View.GONE);
-                if (presenceTimestamp != 0) {
-                    presenceStat = TimeHelper.getTimeAgo(presenceTimestamp);
-
-                    availableStatToolbar.setText(presenceStat);
-                    updateToolbarTvsVisibility(false);
-                }
-                updatePresenceHandler.postDelayed(this, UPDATE_PRESENCE_DELAY);
-            }
-        }
-    };
-
-
     public void showShareItem() {
         MenuItem menuItem = toolbar.getMenu().findItem(R.id.menu_item_share);
-        if (menuItem != null)
-            toolbar.getMenu().findItem(R.id.menu_item_share).setVisible(true);
+        if (menuItem != null) toolbar.getMenu().findItem(R.id.menu_item_share).setVisible(true);
     }
 
 
     public void hideShareItem() {
         MenuItem menuItem = toolbar.getMenu().findItem(R.id.menu_item_share);
-        if (menuItem != null)
-            toolbar.getMenu().findItem(R.id.menu_item_share).setVisible(false);
+        if (menuItem != null) toolbar.getMenu().findItem(R.id.menu_item_share).setVisible(false);
     }
 
 
     private void showBlockedDialog() {
         AlertDialog.Builder builder = new AlertDialog.Builder(ChatActivity.this);
-        builder.setTitle(R.string.user_is_blocked)
-                .setPositiveButton(R.string.unblock, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        blockUserClicked();
-                    }
-                }).setNegativeButton(R.string.cancel, null)
-                .show();
+        builder.setTitle(R.string.user_is_blocked).setPositiveButton(R.string.unblock, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                blockUserClicked();
+            }
+        }).setNegativeButton(R.string.cancel, null).show();
     }
 
     private int getLastVisibileItem() {
@@ -3085,27 +2951,23 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         if (message.getThumb() != null) {
             quotedThumb.setVisibility(View.VISIBLE);
             Glide.with(this).load(message.getThumb()).into(quotedThumb);
-        } else
-            quotedThumb.setVisibility(View.GONE);
+        } else quotedThumb.setVisibility(View.GONE);
 
         if (!message.isTextMessage() && MessageTypeHelper.getMessageTypeDrawable(message.getType()) != -1) {
             int messageTypeResource = MessageTypeHelper.getMessageTypeDrawable(message.getType());
             if (messageTypeResource != -1) {
-                Drawable drawable = getResources()
-                        .getDrawable(messageTypeResource);
+                Drawable drawable = getResources().getDrawable(messageTypeResource);
                 drawable.mutate().setColorFilter(ContextCompat.getColor(this, R.color.grey), PorterDuff.Mode.SRC_IN);
                 tvQuotedText.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
             }
-        } else
-            tvQuotedText.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+        } else tvQuotedText.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
 
         tvQuotedText.setTextColor(ContextCompat.getColor(this, R.color.colorWhite));
 
     }
 
     private void animateReplyLayout(final boolean showLayout) {
-        if (showLayout)
-            quotedMessageFrame.setVisibility(View.VISIBLE);
+        if (showLayout) quotedMessageFrame.setVisibility(View.VISIBLE);
         else {
             if (quotedMessageFrame.getVisibility() == View.GONE)//don't animate if it's already hidden
                 return;
@@ -3116,8 +2978,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
         float toY = showLayout ? typingLayout.getTop() : typingLayout.getBottom();
 
 
-        Animation
-                animation = new TranslateAnimation(0, 0, fromY, toY);
+        Animation animation = new TranslateAnimation(0, 0, fromY, toY);
         animation.setDuration(250);
         animation.setAnimationListener(new Animation.AnimationListener() {
             @Override
@@ -3129,8 +2990,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
             public void onAnimationEnd(Animation animation) {
                 ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) quotedMessageFrame.getLayoutParams();
                 quotedMessageFrame.setLayoutParams(params);
-                if (!showLayout)
-                    quotedMessageFrame.setVisibility(View.GONE);
+                if (!showLayout) quotedMessageFrame.setVisibility(View.GONE);
             }
 
             @Override
@@ -3142,19 +3002,16 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     public void hideReplyMenuItem() {
         MenuItem menuItem = toolbar.getMenu().findItem(R.id.menu_item_reply);
-        if (menuItem != null)
-            toolbar.getMenu().findItem(R.id.menu_item_reply).setVisible(false);
+        if (menuItem != null) toolbar.getMenu().findItem(R.id.menu_item_reply).setVisible(false);
     }
 
     public void showReplyItem() {
         MenuItem menuItem = toolbar.getMenu().findItem(R.id.menu_item_reply);
-        if (menuItem != null)
-            toolbar.getMenu().findItem(R.id.menu_item_reply).setVisible(true);
+        if (menuItem != null) toolbar.getMenu().findItem(R.id.menu_item_reply).setVisible(true);
     }
 
     private Message getQuotedMessage() {
-        if (quotedMessageFrame.getVisibility() == View.GONE)
-            return null;
+        if (quotedMessageFrame.getVisibility() == View.GONE) return null;
 
 
         return currentQuotedMessage;
@@ -3200,8 +3057,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
             switch (message.getType()) {
                 case MessageType.SENT_IMAGE:
                 case MessageType.RECEIVED_IMAGE:
-                    if (message.getType() == MessageType.SENT_IMAGE ||
-                            message.getDownloadUploadStat() == DownloadUploadStat.SUCCESS) {
+                    if (message.getType() == MessageType.SENT_IMAGE || message.getDownloadUploadStat() == DownloadUploadStat.SUCCESS) {
                         String path = message.getLocalPath();
                         String messageId = message.getMessageId();
 
@@ -3227,8 +3083,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
                             ImageView imageView = view.findViewById(R.id.img_msg);
                             if (imageView != null && ViewCompat.getTransitionName(imageView) != null)
-                                startActivity(intent, ActivityOptionsCompat.makeSceneTransitionAnimation(ChatActivity.this,
-                                        imageView, ViewCompat.getTransitionName(imageView)).toBundle());
+                                startActivity(intent, ActivityOptionsCompat.makeSceneTransitionAnimation(ChatActivity.this, imageView, ViewCompat.getTransitionName(imageView)).toBundle());
 
                         }
                     }
@@ -3236,8 +3091,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
                 case MessageType.RECEIVED_VIDEO:
                 case MessageType.SENT_VIDEO:
-                    if (message.getType() == MessageType.SENT_VIDEO ||
-                            message.getDownloadUploadStat() == DownloadUploadStat.SUCCESS) {
+                    if (message.getType() == MessageType.SENT_VIDEO || message.getDownloadUploadStat() == DownloadUploadStat.SUCCESS) {
 
                         String path = message.getLocalPath();
                         String messageId = message.getMessageId();
@@ -3308,8 +3162,7 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
 
     @Override
     public void onItemViewClick(int pos, @NotNull View itemView, @NotNull Message message) {
-        if (isInActionMode)
-            viewModel.itemSelected(pos, message);
+        if (isInActionMode) viewModel.itemSelected(pos, message);
 
     }
 
@@ -3377,8 +3230,8 @@ public class ChatActivity extends BaseActivity implements GroupTyping.GroupTypin
     }
 
     @Override
-    public  void onSpeedUp(float speed) {
-        ServiceHelper.speedUp(this,speed);
+    public void onSpeedUp(float speed) {
+        ServiceHelper.speedUp(this, speed);
     }
 
     //OnSeek for Audible Messages
