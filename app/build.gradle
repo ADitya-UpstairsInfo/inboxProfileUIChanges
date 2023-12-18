@@ -137,7 +137,7 @@ dependencies {
     implementation 'com.googlecode.ez-vcard:ez-vcard:0.10.3'
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'me.zhanghai.android.systemuihelper:library:1.0.0'
-    implementation 'com.evernote:android-job:1.2.6'
+    implementation 'com.evernote:android-job:1.4.3'
     implementation 'com.devlomi:circularstatusview:1.0.1'
     implementation 'com.github.ViksaaSkool:AutoFitEditText:53238e2d29'
 

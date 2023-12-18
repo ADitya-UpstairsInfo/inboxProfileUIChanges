@@ -46,7 +46,7 @@ public class NotificationHelper extends ContextWrapper {
     //this is used to handleNewMessage on devices below API24 since it will be only one notification
     public static final int ID_NOTIFICATION = 1;
     public static final int ID_NOTIFICATION_AUDIO = -2;
-    public static final int ID_GROUP_NOTIFICATION = -1;
+    public static final int ID_GROUP_NOTIFICATION = 10;
     public static final String NOTIFICATION_CHANNEL_NAME_MESSAGES = "Messages Notifications";
     public static final String NOTIFICATION_CHANNEL_ID_MESSAGES = "Messages_Notifications_ID";
     public static final String NOTIFICATION_CHANNEL_NAME_AUDIO = "Audio Notifications";
@@ -349,7 +349,7 @@ public class NotificationHelper extends ContextWrapper {
                     notificationBuilder.addAction(getMarkAsReadAction(unreadChat));
 
                     try {
-                        getManager().notify(notificationId, notificationBuilder.build());
+                        getManager().notify(21, notificationBuilder.build());
                         getManager().notify(ID_GROUP_NOTIFICATION, groupNotification.build());
                     } catch (IllegalArgumentException iae) {
                         Log.e("Aditya", "fireNotification: ", iae.getCause());

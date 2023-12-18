@@ -5,7 +5,6 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 
-import com.yearlater.inboxmessenger.utils.RealmBackupRestore;
 import com.evernote.android.job.DailyJob;
 import com.evernote.android.job.JobRequest;
 import com.yearlater.inboxmessenger.utils.RealmBackupRestore;
@@ -21,8 +20,8 @@ public class DailyBackupJob extends DailyJob {
                     TimeUnit.HOURS.toMillis(2),
                     TimeUnit.HOURS.toMillis(3)
             );
-        }catch (NullPointerException nullPointerException){
-            Toast.makeText(context,"Unable to create backup job",Toast.LENGTH_SHORT).show();
+        } catch (NullPointerException nullPointerException) {
+            Toast.makeText(context, "Unable to create backup job", Toast.LENGTH_SHORT).show();
         }
     }
 

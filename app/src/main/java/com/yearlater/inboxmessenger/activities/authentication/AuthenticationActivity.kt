@@ -16,7 +16,9 @@ import androidx.navigation.NavController
 import androidx.navigation.Navigation
 import androidx.navigation.fragment.NavHostFragment
 import com.google.android.material.snackbar.Snackbar
-import com.google.firebase.auth.*
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
+import com.google.firebase.auth.PhoneAuthProvider
 import com.otpless.main.OtplessView
 import com.yearlater.inboxmessenger.BuildConfig
 import com.yearlater.inboxmessenger.R
@@ -26,7 +28,7 @@ import com.yearlater.inboxmessenger.utils.IntentUtils
 import com.yearlater.inboxmessenger.utils.SharedPreferencesManager
 import com.yearlater.inboxmessenger.utils.Util
 import com.yearlater.inboxmessenger.utils.network.AuthManager
-import kotlinx.android.synthetic.main.activity_authentication.*
+import kotlinx.android.synthetic.main.activity_authentication.progressbar
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import okhttp3.MediaType
@@ -349,7 +351,7 @@ class AuthenticationActivity : AppCompatActivity(), AuthCallbacks {
 
     private fun setLoading(setLoading: Boolean) {
         progressbar.isVisible = setLoading
-        if (!this.navHostFragment.isAdded) return;
+        if (!this.navHostFragment.isAdded) return
         navHostFragment.childFragmentManager.fragments.getOrNull(0)?.let { fragment ->
             if (fragment is BaseAuthFragment) {
                 if (setLoading) fragment.disableViews()
